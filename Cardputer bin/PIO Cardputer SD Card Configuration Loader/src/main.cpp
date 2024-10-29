@@ -9,6 +9,7 @@
 
 #include "WiFiHelper.h"
 #include "WeatherHelper.h"
+#include "LEDHelper.h"
 
 // Create buffers for LVGL display
 static lv_disp_draw_buf_t draw_buf;
@@ -135,19 +136,7 @@ void setup() {
     cfg.serial_baudrate = 115200;  // Set serial baud rate
     M5.begin(cfg);
 
-    if (!initializeSDCard()) {
-        Serial.println("Failed to initialize SD card");
-        return;
-    }
-
-    loadConfigFromSD();  // Load config from SD card
-
-    // Output loaded configuration values
-    Serial.println("WiFi SSID: " + WIFI_SSID);
-    Serial.println("WiFi Password: " + WIFI_PASSWORD);
-    Serial.println("Time Zone: " + TIME_ZONE);
-    Serial.println("API Key: " + API_KEY);
-    Serial.println("Location: " + LOCATION);
+    M5.Display.setRotation(1); // Rotate the screen
 
     // Set the initial brightness
     M5.Lcd.setBrightness(currentBrightness);  // Set initial brightness to half (128)
@@ -159,6 +148,24 @@ void setup() {
 
     walking_Animation(ui_Img_stat, 0);
     thumpsup_Animation(ui_Img_data, 0);
+
+    delay(500);
+
+    if (!initializeSDCard()) {
+        Serial.println("Failed to initialize SD card");
+        lv_obj_set_style_text_color(ui_Label_date, lv_color_hex(0xff0000), LV_PART_MAIN);
+        lv_label_set_text(ui_Label_date, "SD Failed!");
+        return;
+    }
+
+    loadConfigFromSD();  // Load config from SD card
+
+    // Output loaded configuration values
+    Serial.println("WiFi SSID: " + WIFI_SSID);
+    Serial.println("WiFi Password: " + WIFI_PASSWORD);
+    Serial.println("Time Zone: " + TIME_ZONE);
+    Serial.println("API Key: " + API_KEY);
+    Serial.println("Location: " + LOCATION);
 
     // Create FreeRTOS tasks for WiFi, Weather, and Battery in the background
     xTaskCreatePinnedToCore(wifiTask, "wifiTask", 4096, NULL, 1, NULL, 1);
