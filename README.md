@@ -1,4 +1,4 @@
-# Pip Boy Weather Clock Using LVGL
+# Pip-Boy ADV - M5Stack Cardputer ADV Edition
 
 ---
 <p align="center">
@@ -18,48 +18,58 @@
 
 ![alt text](Elements/IMG_2923.JPG)
 
-Check videos on 
+## M5Stack Cardputer ADV ONLY
 
-Lilygo 1.64" : https://youtu.be/y4AK9kuxWG8
-
-Cardputer : https://youtu.be/WOr_QTMYXRI
+This project has been optimized exclusively for the **M5Stack Cardputer ADV** with the following hardware:
+- **Display:** 240x135 ST7789 TFT
+- **MCU:** ESP32-S3 (StampS3)
+- **Keyboard:** Full QWERTY keyboard
+- **PMIC:** AXP2101 Power Management
+- **Sensors:** IMU (accelerometer/gyroscope)
+- **Expansion:** LoRa SX1262 Hat support
+- **LED:** WS2812B NeoPixel
+- **Storage:** SD card support
 
 ---
-## PIO (PlatformIO) Setup
-1. Update the `config.h` file with your own WiFi credentials, Time Zone, API key, and location data.
 
-```c++
-#ifndef CONFIG_H
-#define CONFIG_H
+## Features
 
-// WiFi credentials (replace with your SSID and password)
-#define WIFI_SSID "SSID"
-#define WIFI_PASSWORD "PASSWORD"
+✅ **Weather Display** - Real-time weather data from WeatherAPI  
+✅ **NTP Time Sync** - Automatic time synchronization with timezone support  
+✅ **LoRa Communication** - SX1262 LoRa Hat support for wireless messaging  
+✅ **Sensor Monitoring** - IMU-based gesture detection (shake, tap)  
+✅ **Pip-Boy UI** - Retro-futuristic LVGL interface with animations  
+✅ **SD Card Config** - Dynamic configuration loading from SD card  
+✅ **Audio Effects** - Built-in beeps and sound effects  
+✅ **Multi-Tab Interface** - Stats, Radio, Settings, and more  
 
-#define TIME_ZONE "AST-3"  // Adjust this to the desired time zone string
+---
 
-// weatherapi.com API key
-#define API_KEY "PPI_KEY"
-// Location for weather query
-#define LOCATION "LOCATION"
+## PlatformIO Setup
 
+1. Open `Cardputer bin/PIO Cardputer SD Card Configuration Loader/` in PlatformIO
 
-#endif // CONFIG_H
+2. Update `config.txt` with your data and copy to the root directory of your SD card:
 ```
-2. Open the folder in PlatformIO and Flash it.
-
-## Cardputer .bin Setup
-
-1. Update `config.txt` with you data and copy to the root directory of your SD card (i.e., not inside any folder).
-```
-WIFI_SSID=SSID
-WIFI_PASSWORD=Passwrod
-TIME_ZONE=Time Zone
-API_KEY=weatherapi.com API key
-LOCATION=Location
+WIFI_SSID=YourSSID
+WIFI_PASSWORD=YourPassword
+TIME_ZONE=AST-3
+API_KEY=YourWeatherAPIKey
+LOCATION=YourCity
 ```
 
-2. Use the [ESP Web Flasher](https://espressif.github.io/esptool-js/) to flash the .bin to Cardputer. Set the flash address to `0x0` / (`0`) when flashing.
+3. Build and upload using PlatformIO:
+   - Environment: `m5stack-cardputer-adv`
+   - Board: `m5stack-stamps3`
+   - Upload speed: 1500000
+
+## Binary Flashing Setup
+
+1. Update `config.txt` with your data and copy to the root directory of your SD card (not inside any folder).
+
+2. Use the [ESP Web Flasher](https://espressif.github.io/esptool-js/) to flash the .bin file to Cardputer ADV.
+   - Set flash address to `0x0` when flashing
+   - Use the binary from `Cardputer bin/` folder
 
 ## Time Zone Configuration for NTP
 
