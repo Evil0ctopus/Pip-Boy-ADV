@@ -1,6 +1,7 @@
 #include "ui_main.h"
 #include "ui_animations.h"
 #include "ui_settings.h"
+#include "ui_radio.h"
 
 // Global UI objects
 lv_obj_t *ui_tabview = NULL;
@@ -102,23 +103,7 @@ static void create_stats_tab() {
 
 // Create Radio tab content
 static void create_radio_tab() {
-    lv_obj_t *title = lv_label_create(ui_tab_radio);
-    lv_label_set_text(title, "RADIO");
-    lv_obj_set_style_text_color(title, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_20, 0);
-    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 5);
-    
-    lv_obj_t *subtitle = lv_label_create(ui_tab_radio);
-    lv_label_set_text(subtitle, "[Future: Meshtastic Integration]");
-    lv_obj_set_style_text_color(subtitle, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(subtitle, &lv_font_montserrat_12, 0);
-    lv_obj_align(subtitle, LV_ALIGN_CENTER, 0, 0);
-    
-    lv_obj_t *info = lv_label_create(ui_tab_radio);
-    lv_label_set_text(info, "Expandable for:\n- Meshtastic\n- LoRa Radio\n- IR Tools");
-    lv_obj_set_style_text_color(info, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(info, &lv_font_montserrat_10, 0);
-    lv_obj_align(info, LV_ALIGN_BOTTOM_MID, 0, -10);
+    ui_radio_init(ui_tab_radio);
 }
 
 // Create Inventory tab content

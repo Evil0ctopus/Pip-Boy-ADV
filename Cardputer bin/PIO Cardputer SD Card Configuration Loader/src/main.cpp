@@ -15,6 +15,13 @@
 #include "ui_animations.h"
 #include "ui_settings.h"
 #include "ui_assets.h"
+#include "ui_radio.h"
+
+// Hardware modules
+#include "LoRaHelper.h"
+#include "AudioHelper.h"
+#include "SensorHelper.h"
+#include "BluetoothHelper.h"
 
 // Create buffers for LVGL display
 static lv_disp_draw_buf_t draw_buf;
@@ -82,55 +89,151 @@ const unsigned long ntpTimeCheckInterval = 10000;  // 10 seconds interval for NT
 static bool walking_anim_active = false;
 static unsigned long last_anim_toggle = 0;
 
+// LoRa receive task
+void loraReceiveTask(void *pvParameters) {
+    while (true) {
+        if (lora.isInitialized() && lora.available()) {
+            LoRaPacket packet = lora.receive();
+            
+            if (packet.valid) {
+                // Convert data to string
+                char msg[256];
+                size_t len = min(packet.length, (uint8_t)255);
+                memcpy(msg, packet.data, len);
+                msg[len] = '\0';
+                
+                // Update UI
+                ui_radio_add_message(msg, false);
+                ui_radio_update_rssi(packet.rssi);
+                ui_radio_update_snr(packet.snr);
+                
+                // Update stats
+                LoRaStats stats = lora.getStats();
+                ui_radio_update_stats(stats.packets_received, stats.packets_sent);
+                
+                // Play notification sound
+                audio.playEffect(SFX_NOTIFICATION);
+            }
+        }
+        
+        vTaskDelay(100 / portTICK_PERIOD_MS);  // Check every 100ms
+    }
+}
+
+// Sensor monitoring task
+void sensorMonitorTask(void *pvParameters) {
+    while (true) {
+        if (sensors.isInitialized()) {
+            sensors.updateIMU();
+            
+            // Check for shake gesture
+            if (sensors.detectShake()) {
+                // Toggle animation on shake
+                if (walking_anim_active) {
+                    ui_animation_stop();
+                    ui_animation_play(ANIM_THUMBSUP);
+                    walking_anim_active = false;
+                } else {
+                    ui_animation_stop();
+                    ui_animation_play(ANIM_WALKING);
+                    walking_anim_active = true;
+                }
+                audio.playBeep();
+            }
+        }
+        
+        vTaskDelay(50 / portTICK_PERIOD_MS);  // Update every 50ms
+    }
+}
+
 // Function prototypes for controlling the green LED and stopping the LED
 void blinkGreenLED();
 void stopLED();
 void connectToWiFi();
 void loadConfigFromSD();
-bool initializeSDCard();
-
-// Global variables to track data fetch status
-static bool weatherFetched = false;
-static bool ntpFetched = false;
-
-// Function to update the battery level bar based on the current battery voltage
-void updateBatteryBar() {
-    // Get the current battery voltage
-    int batteryLevel = M5.Power.getBatteryLevel();  // Get battery level (0-100%)
-
-    // Update the UI
-    ui_update_battery(batteryLevel);
-
-    // Serial debug output
-    Serial.print("Battery Level: ");
-    Serial.print(batteryLevel);
-    Serial.println("%");
-}
-
-
-void batteryTask(void *pvParameters) {
-    while (true) {
-        // Update the battery bar every 10 seconds
-        updateBatteryBar();  // Your existing function to update the battery bar
-        vTaskDelay(10000 / portTICK_PERIOD_MS);  // Delay 10 seconds between updates
-    }
-}
-
-// Tick handler function for LVGL (called every 10ms)
-void lv_tick_task(void *arg) {
-    while (1) {
-        lv_tick_inc(10);  // Increment LVGL tick by 10ms
-        vTaskDelay(pdMS_TO_TICKS(10));  // Delay 10ms
-    }
-}
-
-void setup() {
-    // Initialize M5Unified hardware for Cardputer ADV
-    Serial.begin(115200);
+bool inPlay startup sound
+    audio.begin();
+    audio.playStartupSequence();
     
-    // Configure M5Unified for Cardputer ADV
-    auto cfg = M5.config();
-    cfg.serial_baudrate = 115200;
+    // Initialize asset loading system
+    if (!ui_assets_init()) {
+        Serial.println("Failed to initialize asset system");
+    }
+
+    delay(500);
+
+    if (!initializeSDCard()) {
+        Serial.println("Failed to initialize SD card");
+        ui_update_date("SD Failed!");
+        return;
+    }
+
+    loadConfigFromSD();  // Load config from SD card
+
+    // Output loaded configuration values
+    Serial.println("WiFi SSID: " + WIFI_SSID);
+    Serial.println("WiFi Password: " + WIFI_PASSWORD);
+    Serial.println("Time Zone: " + TIME_ZONE);
+    Serial.println("API Key: " + API_KEY);
+    Serial.println("Location: " + LOCATION);
+
+    // Initialize hardware modules
+    Serial.println("\n=== Initializing Hardware ===");
+    
+    // Initialize sensors
+    if (sensors.begin()) {
+        Serial.println("✓ Sensors initialized");
+        sensors.printSensorInfo();
+    } else {
+        Serial.println("✗ Sensor initialization failed");
+    }
+    
+    // Initialize LoRa
+    if (lora.begin()) {
+        Serial.println("✓ LoRa initialized");
+        ui_radio_update_status(true, true);
+        ui_radio_update_frequency(LORA_DEFAULT_FREQ);
+    } else {
+        Serial.println("✗ LoRa initialization failed");
+        ui_radio_update_status(false, false);
+        ui_radio_add_message("LoRa init failed - Check hat connection", false);
+    }
+    
+    // Initialize Bluetooth (optional - comment out to save resources)
+    // if (bluetooth.begin("Pip-Boy-ADV")) {
+    //     Serial.println("✓ Bluetooth initialized");
+    // } else {
+    //     Serial.println("✗ Bluetooth initialization failed");
+    // }
+    
+    Serial.println("=============================\n");
+
+    // Start walking animation
+    ui_animation_play(ANIM_WALKING);
+    walking_anim_active = true;
+
+    // Create FreeRTOS tasks for WiFi, Weather, and Battery in the background
+    xTaskCreatePinnedToCore(wifiTask, "wifiTask", 4096, NULL, 1, NULL, 1);
+    xTasaudio.playButtonPress();
+        Serial.println("Animation toggled");
+    }
+    
+    // Tab switching with side buttons
+    if (M5.BtnB.wasPressed()) {
+        // Switch to next tab
+        static int current_tab = TAB_STATS;
+        current_tab = (current_tab + 1) % 4;
+        ui_switch_tab(current_tab);
+        audio.playTabSwitch();
+        Serial.printf("Switched to tab %d\n", current_tab);
+    }
+    
+    // Brightness control with BtnC
+    if (M5.BtnC.wasPressed()) {
+        currentBrightness = (currentBrightness + 64) % 256;
+        M5.Display.setBrightness(currentBrightness);
+        ui_settings_update_brightness(currentBrightness);
+        audio.playBeep(3000, 50
     M5.begin(cfg);
 
     M5.Display.setRotation(1); // Rotate the screen for 240x135 landscape
