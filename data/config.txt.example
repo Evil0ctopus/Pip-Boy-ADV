@@ -1,0 +1,5 @@
+WIFI_SSID=YourNetworkName
+WIFI_PASSWORD=YourPassword
+TIME_ZONE=AST-3
+API_KEY=YourWeatherAPIKey
+LOCATION=YourCity

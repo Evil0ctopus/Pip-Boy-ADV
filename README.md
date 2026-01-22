@@ -1,75 +1,249 @@
 # Pip-Boy ADV - M5Stack Cardputer ADV Edition
 
----
-<p align="center">
-  <span style="color: yellow;">If you like this project, consider supporting it:</span>
-</p>
-
-<p align="center">
-  <a href="https://www.buymeacoffee.com/nishad2m8" target="_blank">
-    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" style="height: 35px;">
-  </a>
-  <a href="https://www.youtube.com/channel/UCV_35rUyf4N5mHZXaxaFKiQ" target="_blank">
-    <img src="https://img.shields.io/badge/Subscribe%20on%20YouTube-FF0000?style=flat&logo=youtube" alt="Subscribe on YouTube" style="height: 35px;">
-  </a>
-</p>
+A Fallout-inspired Pip-Boy interface exclusively for the **M5Stack Cardputer ADV** featuring real-time weather, NTP time sync, LoRa communication, and retro UI with LVGL.
 
 ---
 
-![alt text](Elements/IMG_2923.JPG)
+## 🎯 Project Status
 
-## M5Stack Cardputer ADV ONLY
+✅ **Clean PlatformIO Structure**  
+✅ **Single Device Support:** M5Stack Cardputer ADV Only  
+✅ **Production Ready:** Verified pin mappings and build configuration  
 
-This project has been optimized exclusively for the **M5Stack Cardputer ADV** with the following hardware:
+---
+
+## 📋 Hardware Requirements
+
+- **Device:** M5Stack Cardputer ADV
+- **MCU:** ESP32-S3 (Dual Core, 240MHz, 8MB PSRAM)
 - **Display:** 240x135 ST7789 TFT
-- **MCU:** ESP32-S3 (StampS3)
-- **Keyboard:** Full QWERTY keyboard
-- **PMIC:** AXP2101 Power Management
-- **Sensors:** IMU (accelerometer/gyroscope)
-- **Expansion:** LoRa SX1262 Hat support
-- **LED:** WS2812B NeoPixel
-- **Storage:** SD card support
+- **Keyboard:** Full QWERTY (TCA8418 controller)
+- **Storage:** MicroSD card (FAT32)
+- **Optional:** LoRa SX1262 Hat for wireless communication
 
 ---
 
-## Features
+## ✨ Features
 
-✅ **Weather Display** - Real-time weather data from WeatherAPI  
-✅ **NTP Time Sync** - Automatic time synchronization with timezone support  
-✅ **LoRa Communication** - SX1262 LoRa Hat support for wireless messaging  
-✅ **Sensor Monitoring** - IMU-based gesture detection (shake, tap)  
-✅ **Pip-Boy UI** - Retro-futuristic LVGL interface with animations  
-✅ **SD Card Config** - Dynamic configuration loading from SD card  
-✅ **Audio Effects** - Built-in beeps and sound effects  
-✅ **Multi-Tab Interface** - Stats, Radio, Settings, and more  
+- ✅ **Retro Pip-Boy UI** - Classic green phosphor CRT aesthetic
+- ✅ **Weather Integration** - Real-time data via WeatherAPI
+- ✅ **NTP Time Sync** - Automatic timezone-aware clock
+- ✅ **LoRa Radio** - SX1262 hat support for wireless messaging
+- ✅ **IMU Gestures** - Shake detection and orientation sensing
+- ✅ **Animations** - Sprite-based character animations
+- ✅ **Modular Design** - Clean separation of UI and hardware layers
+- ✅ **SD Card Config** - Dynamic configuration loading
 
 ---
 
-## PlatformIO Setup
+## 🚀 Quick Start
 
-1. Open `Cardputer bin/PIO Cardputer SD Card Configuration Loader/` in PlatformIO
+### 1. Prerequisites
 
-2. Update `config.txt` with your data and copy to the root directory of your SD card:
+Install [PlatformIO](https://platformio.org/):
+- **VS Code:** Install PlatformIO IDE extension
+- **CLI:** `pip install platformio`
+
+### 2. Clone and Build
+
+```bash
+git clone <your-repo-url>
+cd Pip-Boy-ADV
+pio run
 ```
-WIFI_SSID=YourSSID
+
+### 3. Prepare SD Card
+
+Format SD card as FAT32 and create this structure:
+```
+/config.txt              # Required: WiFi and API credentials
+/assets/Images/          # Optional: Animation frames
+  walking/
+  thumpsup/
+  battery.png
+```
+
+Copy `data/config.txt.example` to your SD card as `config.txt` and edit with your credentials:
+```
+WIFI_SSID=YourNetwork
 WIFI_PASSWORD=YourPassword
 TIME_ZONE=AST-3
 API_KEY=YourWeatherAPIKey
 LOCATION=YourCity
 ```
 
-3. Build and upload using PlatformIO:
-   - Environment: `m5stack-cardputer-adv`
-   - Board: `m5stack-stamps3`
-   - Upload speed: 1500000
+See [data/SD_CARD_STRUCTURE.md](data/SD_CARD_STRUCTURE.md) for details.
 
-## Binary Flashing Setup
+### 4. Upload
 
-1. Update `config.txt` with your data and copy to the root directory of your SD card (not inside any folder).
+```bash
+pio run -t upload
+pio device monitor -b 115200
+```
 
-2. Use the [ESP Web Flasher](https://espressif.github.io/esptool-js/) to flash the .bin file to Cardputer ADV.
-   - Set flash address to `0x0` when flashing
-   - Use the binary from `Cardputer bin/` folder
+---
+
+## 📁 Repository Structure
+
+```
+Pip-Boy-ADV/
+├── platformio.ini           # PlatformIO configuration
+├── src/                     # Source code (.cpp)
+│   ├── main.cpp
+│   ├── ui_*.cpp            # UI modules
+│   ├── *Helper.cpp         # Hardware helpers
+│   └── ...
+├── include/                 # Headers (.h)
+│   ├── HardwareConfig.h    # Pin definitions
+│   ├── Config.h
+│   ├── lv_conf.h           # LVGL configuration
+│   └── ...
+├── lib/                     # Custom libraries (empty - using registry)
+├── data/                    # SD card filesystem content
+│   ├── assets/             # Place assets here for upload
+│   ├── themes/             # Optional theme files
+│   ├── config.txt.example  # Sample configuration
+│   └── SD_CARD_STRUCTURE.md
+├── docs/                    # Archived documentation
+│   ├── CARDPUTER_ADV_CONFIG.md
+│   ├── QUICK_REFERENCE_ADV.md
+│   └── ...
+└── README.md
+```
+
+---
+
+## 🔧 Hardware Pin Configuration
+
+All pin definitions are in [include/HardwareConfig.h](include/HardwareConfig.h)
+
+### Critical Pins
+| Function | Pin | Notes |
+|----------|-----|-------|
+| I2C SDA | GPIO 12 | Keyboard, IMU, PMIC |
+| I2C SCL | GPIO 11 | 400kHz |
+| SD SCK | GPIO 40 | HSPI bus |
+| SD MISO | GPIO 39 | |
+| SD MOSI | GPIO 14 | |
+| SD CS | GPIO 12 | |
+| NeoPixel | GPIO 21 | Status LED |
+| LoRa SCK | GPIO 36 | SX1262 hat |
+| LoRa MISO | GPIO 37 | |
+| LoRa MOSI | GPIO 35 | |
+| LoRa CS | GPIO 34 | |
+
+See [QUICK_REFERENCE_ADV.md](QUICK_REFERENCE_ADV.md) for complete pinout.
+
+---
+
+## 📚 Documentation
+
+- **[README_ADV.md](README_ADV.md)** - Detailed ADV implementation guide
+- **[CARDPUTER_ADV_CONFIG.md](CARDPUTER_ADV_CONFIG.md)** - Complete configuration reference
+- **[QUICK_REFERENCE_ADV.md](QUICK_REFERENCE_ADV.md)** - Quick pin reference
+- **[HARDWARE_GUIDE.md](HARDWARE_GUIDE.md)** - Hardware integration guide
+- **[BUILD_GUIDE.md](BUILD_GUIDE.md)** - Build and upload instructions
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Software architecture overview
+
+---
+
+## 🛠️ Development
+
+### Build Commands
+```bash
+pio run                      # Build
+pio run -t upload            # Upload to device
+pio device monitor           # Serial monitor
+pio run -t clean             # Clean build
+```
+
+### Environment
+```ini
+[env:cardputer-adv]
+board = esp32-s3-devkitc-1
+platform = espressif32
+framework = arduino
+```
+
+---
+
+## 🎨 Customization
+
+### Themes
+Create `/themes/pipboy.theme` on SD card for custom colors (optional).
+
+### Assets
+Place PNG images in `/assets/Images/` on SD card:
+- Walking animation: `walking/walking_00.png` through `walking_20.png`
+- Thumbs up: `thumpsup/thumpsup_00.png` through `thumpsup_10.png`
+- Battery icon: `battery.png`
+
+---
+
+## 📡 LoRa Communication
+
+The firmware supports the M5Stack LoRa SX1262 Hat:
+- **Frequency:** 915 MHz (configurable)
+- **Bandwidth:** 125 kHz
+- **Spreading Factor:** 7
+- **Coding Rate:** 4/5
+
+Modify `LoRaHelper.h` to change LoRa parameters.
+
+---
+
+## 🐛 Troubleshooting
+
+### Serial Not Working
+- Verify `-DARDUINO_USB_CDC_ON_BOOT=1` in platformio.ini
+- Wait 2-3 seconds after upload for USB enumeration
+
+### SD Card Fails
+- Format as FAT32
+- Check connections: SCK=40, MISO=39, MOSI=14, CS=12
+- Verify files are in root directory
+
+### Display Issues
+- Display managed by M5Unified
+- Verify LVGL config in `include/lv_conf.h`
+
+### LoRa Not Working
+- Check hat connection
+- Verify pins in `include/HardwareConfig.h`
+- Ensure `RADIOLIB_GODMODE` flag is set
+
+---
+
+## 📦 Dependencies
+
+- **M5Unified** ^0.1.16 - Hardware abstraction for Cardputer ADV
+- **LVGL** ^8.3.11 - Graphics library
+- **ArduinoJson** ^6.21.3 - JSON parsing
+- **Adafruit NeoPixel** ^1.12.3 - LED control
+- **RadioLib** ^6.4.0 - LoRa communication
+
+---
+
+## 📄 License
+
+This project is provided as-is for educational and personal use.
+
+---
+
+## 🙏 Acknowledgments
+
+- M5Stack for the Cardputer ADV hardware
+- LVGL project for the UI framework
+- RadioLib for LoRa support
+- Original Pip-Boy design © Bethesda Softworks
+
+---
+
+## 🔗 Links
+
+- **Hardware:** [M5Stack Cardputer ADV](https://shop.m5stack.com/)
+- **PlatformIO:** [platformio.org](https://platformio.org/)
+- **LVGL:** [lvgl.io](https://lvgl.io/)
 
 ## Time Zone Configuration for NTP
 
