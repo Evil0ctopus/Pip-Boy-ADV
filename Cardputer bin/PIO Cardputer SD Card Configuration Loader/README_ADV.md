@@ -1,5 +1,9 @@
 # Pip-Boy ADV - M5Stack Cardputer ADV Implementation
 
+> **✅ Configuration Verified:** This project has been verified and corrected for M5Stack Cardputer ADV.  
+> See [CARDPUTER_ADV_CONFIG.md](CARDPUTER_ADV_CONFIG.md) for detailed hardware pin mappings and build configuration.  
+> See [QUICK_REFERENCE_ADV.md](QUICK_REFERENCE_ADV.md) for quick pin reference.
+
 ## Overview
 This is the M5Stack Cardputer ADV implementation of the Pip-Boy interface using M5Unified and LVGL with a modular architecture.
 

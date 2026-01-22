@@ -2,10 +2,10 @@
 #define LEDHELPER_H
 
 #include <Adafruit_NeoPixel.h>
+#include "HardwareConfig.h"
 
-// Define the pin and number of LEDs
-#define PIN_LED 21
-#define NUM_LEDS 1
+// LED configuration from HardwareConfig.h
+// LED_PIN = 21, LED_COUNT = 1
 
 // Enum for LED colors or effects
 enum LedColor { RED, GREEN, BLUE };

@@ -3,16 +3,12 @@
 
 #include <Arduino.h>
 #include <RadioLib.h>
+#include "HardwareConfig.h"
 
 // SX1262 LoRa Hat Pin Definitions for Cardputer ADV
-// Based on official M5Stack LoRa Hat schematic
-#define LORA_MISO 13
-#define LORA_MOSI 15
-#define LORA_SCK  11
-#define LORA_CS   12
-#define LORA_RST  8
-#define LORA_DIO1 3
-#define LORA_BUSY 46
+// Defined in HardwareConfig.h:
+// LORA_SCK=36, LORA_MISO=37, LORA_MOSI=35,
+// LORA_CS=34, LORA_RST=33, LORA_IRQ=39, LORA_BUSY=38
 
 // LoRa Configuration
 #define LORA_DEFAULT_FREQ 915.0      // MHz (change based on region: 433/868/915)

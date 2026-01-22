@@ -1,7 +1,7 @@
 #include "LEDHelper.h"
 
-// Constructor
-LEDHelper::LEDHelper() : np(NUM_LEDS, PIN_LED, NEO_GRB + NEO_KHZ800) {}
+// Constructor - use hardware config constants
+LEDHelper::LEDHelper() : np(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800) {}
 
 // Initialize the NeoPixel
 void LEDHelper::begin() {

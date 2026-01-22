@@ -34,8 +34,8 @@ bool LoRaHelper::begin(float freq, float bw, uint8_t sf, uint8_t cr, uint8_t pow
     loraSPI = new SPIClass(HSPI);
     loraSPI->begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_CS);
     
-    // Create radio instance
-    radio = new SX1262(new Module(LORA_CS, LORA_DIO1, LORA_RST, LORA_BUSY, *loraSPI));
+    // Create radio instance using Cardputer ADV pins
+    radio = new SX1262(new Module(LORA_CS, LORA_IRQ, LORA_RST, LORA_BUSY, *loraSPI));
     
     // Initialize radio
     Serial.print("Frequency: "); Serial.print(freq); Serial.println(" MHz");

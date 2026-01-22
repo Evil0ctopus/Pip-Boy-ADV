@@ -2,6 +2,7 @@
 #include <lvgl.h>         // Include LVGL library
 
 #include "Config.h"       // Config file with external declarations
+#include "HardwareConfig.h"  // Hardware pin definitions for Cardputer ADV
 #include <SD.h>           // SD card library for reading config
 #include <SPI.h>
 #include <FS.h>
@@ -62,12 +63,9 @@ void lvgl_setup() {
     lv_disp_drv_register(&disp_drv);
 }
 
-// SD card pins
-#define SD_SCK 40
-#define SD_MISO 39
-#define SD_MOSI 14
-#define SD_SS 12
-#define SD_SPI_FREQ 1000000  // Example frequency, adjust as needed
+// SD card configuration using hardware definitions
+// Definitions from HardwareConfig.h:
+// SD_SCK=40, SD_MISO=39, SD_MOSI=14, SD_CS=12
 
 SPIClass *hspi = new SPIClass(HSPI);  // SPI for SD card
 
@@ -337,8 +335,8 @@ void loop() {
 
 // Function to initialize SD card
 bool initializeSDCard() {
-    hspi->begin(SD_SCK, SD_MISO, SD_MOSI, SD_SS);
-    if (!SD.begin(SD_SS, *hspi, SD_SPI_FREQ)) {
+    hspi->begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
+    if (!SD.begin(SD_CS, *hspi, SD_SPI_FREQ)) {
         Serial.println("SD card initialization failed");
         return false;
     }
