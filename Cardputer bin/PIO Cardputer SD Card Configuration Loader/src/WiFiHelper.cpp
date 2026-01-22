@@ -3,9 +3,8 @@
 #include "Config.h"
 #include <lvgl.h>
 #include "LEDHelper.h"
-
-extern lv_obj_t *ui_Label_Time;   // External reference to time label
-extern lv_obj_t *ui_Label_date;   // External reference to date label
+#include "ui_main.h"
+#include "ui_settings.h"
 
 // Initialize LEDHelper object
 LEDHelper led;
@@ -77,9 +76,9 @@ void fetchNTPTime() {
             char dateString[32];
             strftime(dateString, sizeof(dateString), "%a, %b %d, %Y", &timeInfo);
 
-            // Update the LVGL labels
-            lv_label_set_text(ui_Label_Time, timeString);  // Update time label
-            lv_label_set_text(ui_Label_date, dateString);  // Update date label
+            // Update the LVGL labels using new UI functions
+            ui_update_time(timeString);  // Update time label
+            ui_update_date(dateString);  // Update date label
 
             Serial.printf("Time: %s, Date: %s\n", timeString, dateString);
 

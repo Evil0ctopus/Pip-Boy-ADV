@@ -1,6 +1,5 @@
-#include <M5Cardputer.h>  // Include M5Cardputer library for M5Stack-specific functionality
+#include <M5Unified.h>    // Use M5Unified instead of M5Cardputer for ADV support
 #include <lvgl.h>         // Include LVGL library
-#include "ui.h"
 
 #include "Config.h"       // Config file with external declarations
 #include <SD.h>           // SD card library for reading config
@@ -10,6 +9,12 @@
 #include "WiFiHelper.h"
 #include "WeatherHelper.h"
 #include "LEDHelper.h"
+
+// New modular UI includes
+#include "ui_main.h"
+#include "ui_animations.h"
+#include "ui_settings.h"
+#include "ui_assets.h"
 
 // Create buffers for LVGL display
 static lv_disp_draw_buf_t draw_buf;
@@ -73,10 +78,9 @@ int currentBrightness = 128;  // Initialize brightness to half (range 0-255)
 unsigned long lastNTPTimeCheck = 0;  // To track when NTP was last checked
 const unsigned long ntpTimeCheckInterval = 10000;  // 10 seconds interval for NTP time check
 
-// Global variables for tab views
-lv_obj_t *ui_tabview;
-lv_obj_t *ui_tab_data;
-lv_obj_t *ui_tab_stat;
+// Animation state
+static bool walking_anim_active = false;
+static unsigned long last_anim_toggle = 0;
 
 // Function prototypes for controlling the green LED and stopping the LED
 void blinkGreenLED();
@@ -92,22 +96,14 @@ static bool ntpFetched = false;
 // Function to update the battery level bar based on the current battery voltage
 void updateBatteryBar() {
     // Get the current battery voltage
-    float batteryVoltage = M5.Power.getBatteryVoltage() / 1000.0; // Convert mV to V
+    int batteryLevel = M5.Power.getBatteryLevel();  // Get battery level (0-100%)
 
-    // Normalize the battery voltage to a percentage (assume 3.2V - 4.2V is 0% - 100%)
-    int batteryPercentage = (int)(((batteryVoltage - 3.3) / (4.2 - 3.3)) * 100);
-    
-    // Ensure the battery percentage is within 0-100 range
-    batteryPercentage = constrain(batteryPercentage, 0, 100);
+    // Update the UI
+    ui_update_battery(batteryLevel);
 
-    // Update the LVGL battery bar UI with the new value
-    lv_bar_set_value(ui_Bar_battery, batteryPercentage, LV_ANIM_ON);
-
-   // Serial debug output
-    Serial.print("Battery Voltage: ");
-    Serial.print(batteryVoltage, 2);  // Print voltage in volts with 2 decimal places
-    Serial.print("V, Battery Percentage: ");
-    Serial.print(batteryPercentage);
+    // Serial debug output
+    Serial.print("Battery Level: ");
+    Serial.print(batteryLevel);
     Serial.println("%");
 }
 
@@ -129,32 +125,35 @@ void lv_tick_task(void *arg) {
 }
 
 void setup() {
-    // Initialize M5Cardputer hardware
+    // Initialize M5Unified hardware for Cardputer ADV
     Serial.begin(115200);
+    
+    // Configure M5Unified for Cardputer ADV
     auto cfg = M5.config();
-    M5Cardputer.begin(cfg, true);
-    cfg.serial_baudrate = 115200;  // Set serial baud rate
+    cfg.serial_baudrate = 115200;
     M5.begin(cfg);
 
-    M5.Display.setRotation(1); // Rotate the screen
+    M5.Display.setRotation(1); // Rotate the screen for 240x135 landscape
 
     // Set the initial brightness
-    M5.Lcd.setBrightness(currentBrightness);  // Set initial brightness to half (128)
+    M5.Display.setBrightness(currentBrightness);
 
     // Initialize LVGL and the display setup
     lvgl_setup();
 
-    ui_init();
-
-    walking_Animation(ui_Img_stat, 0);
-    thumpsup_Animation(ui_Img_data, 0);
+    // Initialize the new modular UI
+    ui_main_init();
+    
+    // Initialize asset loading system
+    if (!ui_assets_init()) {
+        Serial.println("Failed to initialize asset system");
+    }
 
     delay(500);
 
     if (!initializeSDCard()) {
         Serial.println("Failed to initialize SD card");
-        lv_obj_set_style_text_color(ui_Label_date, lv_color_hex(0xff0000), LV_PART_MAIN);
-        lv_label_set_text(ui_Label_date, "SD Failed!");
+        ui_update_date("SD Failed!");
         return;
     }
 
@@ -166,6 +165,9 @@ void setup() {
     Serial.println("Time Zone: " + TIME_ZONE);
     Serial.println("API Key: " + API_KEY);
     Serial.println("Location: " + LOCATION);
+
+    // Start walking animation
+    ui_animation_play(ANIM_WALKING);
 
     // Create FreeRTOS tasks for WiFi, Weather, and Battery in the background
     xTaskCreatePinnedToCore(wifiTask, "wifiTask", 4096, NULL, 1, NULL, 1);
@@ -186,43 +188,48 @@ void loop() {
         lastNTPTimeCheck = millis();  // Reset NTP time check timer
     }
 
-    // Handle keyboard input for changing LCD brightness and LVGL tab views
-    if (M5Cardputer.Keyboard.isChange()) {
-        if (M5Cardputer.Keyboard.isPressed()) {
-            // Get the current state of the keys
-            Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
-
-            // Loop through the word vector to check for the pressed keys
-            for (char key : status.word) {
-                // If "/" key is pressed, switch to ui_tab_data
-                if (key == '/') {
-                    lv_tabview_set_act(ui_Tab_main, 1, LV_ANIM_ON);  // Switch to ui_tab_data (index 1)
-                    M5Cardputer.Speaker.tone(4000, 100);
-                }
-                // If "," key is pressed, switch to ui_tab_stat
-                if (key == ',') {
-                    lv_tabview_set_act(ui_Tab_main, 0, LV_ANIM_ON);  // Switch to ui_tab_stat (index 0)
-                    M5Cardputer.Speaker.tone(4000, 100);
-                }
-
-                // Adjust LCD brightness using ';' and '.'
-                if (key == ';') {  // Increase brightness
-                    currentBrightness = constrain(currentBrightness + 25, 0, 255);  // Increase by 25, max 255
-                    M5.Lcd.setBrightness(currentBrightness);  // Update LCD brightness
-                    Serial.printf("Brightness increased to: %d\n", currentBrightness);
-                    M5Cardputer.Speaker.tone(4000, 100);
-                }
-                if (key == '.') {  // Decrease brightness
-                    currentBrightness = constrain(currentBrightness - 25, 0, 255);  // Decrease by 25, min 0
-                    M5.Lcd.setBrightness(currentBrightness);  // Update LCD brightness
-                    Serial.printf("Brightness decreased to: %d\n", currentBrightness);
-                    M5Cardputer.Speaker.tone(4000, 100);
-                }
-            }
+    // Handle keyboard input using M5Unified
+    M5.update();
+    
+    // Check for keyboard input (M5Unified provides BtnA, BtnB, BtnC for side buttons)
+    // For Cardputer keyboard, we need to use the Keyboard interface
+    // Note: M5Unified may handle keyboard differently than M5Cardputer
+    
+    // Side button example (if available on ADV)
+    if (M5.BtnA.wasPressed()) {
+        // Toggle animation
+        if (walking_anim_active) {
+            ui_animation_stop();
+            ui_animation_play(ANIM_THUMBSUP);
+            walking_anim_active = false;
+        } else {
+            ui_animation_stop();
+            ui_animation_play(ANIM_WALKING);
+            walking_anim_active = true;
         }
+        Serial.println("Animation toggled");
     }
-
-    M5Cardputer.update();  // Update the M5Stack system
+    
+    // For full keyboard support on ADV, you may need to use M5Cardputer's keyboard
+    // even with M5Unified, or implement custom keyboard handling
+    // This is a placeholder for future keyboard integration
+    
+    // Tab switching with side buttons (example)
+    if (M5.BtnB.wasPressed()) {
+        // Switch to next tab
+        static int current_tab = TAB_STATS;
+        current_tab = (current_tab + 1) % 4;
+        ui_switch_tab(current_tab);
+        Serial.printf("Switched to tab %d\n", current_tab);
+    }
+    
+    // Brightness control with BtnC (example)
+    if (M5.BtnC.wasPressed()) {
+        currentBrightness = (currentBrightness + 64) % 256;
+        M5.Display.setBrightness(currentBrightness);
+        ui_settings_update_brightness(currentBrightness);
+        Serial.printf("Brightness: %d\n", currentBrightness);
+    }
 }
 
 // Function to initialize SD card

@@ -2,11 +2,7 @@
 #include "Config.h"
 #include <HTTPClient.h>
 #include <lvgl.h>
-#include "ui.h"
-
-
-extern lv_obj_t *ui_Label_temp;
-extern lv_obj_t *ui_Label_hum;
+#include "ui_main.h"
 
 
 void weatherTask(void *pvParameters) {
@@ -60,24 +56,14 @@ void updateWeatherUI(const String &jsonData) {
 
     // Extract weather data
     float temp_c = doc["current"]["temp_c"];
-    int humidity = doc["current"]["humidity"];
-    float feelslike_c = doc["current"]["feelslike_c"];
-    float heatindex_c = doc["current"]["heatindex_c"];
+    const char* condition = doc["current"]["condition"]["text"];
 
+    // Format temperature and weather strings
+    char tempStr[32];
+    snprintf(tempStr, sizeof(tempStr), "%d°C", (int)round(temp_c));
+    
+    // Update the new UI
+    ui_update_weather(condition, tempStr);
 
-    lv_bar_set_value(ui_Bar_Temp, temp_c, LV_ANIM_ON); 
-    lv_bar_set_value(ui_Bar_Hum, humidity, LV_ANIM_ON);
-    lv_bar_set_value(ui_Bar_FL, feelslike_c, LV_ANIM_ON); 
-    lv_bar_set_value(ui_Bar_HI, heatindex_c, LV_ANIM_ON); 
-
-    // Format and update the temperature label (T:36°C)
-    char tempStr[16];
-    snprintf(tempStr, sizeof(tempStr), "T:%d°C", (int)round(temp_c));  // Round and cast to int for display
-    lv_label_set_text(ui_Label_temp, tempStr);
-
-    // Format and update the humidity label (H:47%)
-    char humStr[16];
-    snprintf(humStr, sizeof(humStr), "H:%d%%", humidity);
-    lv_label_set_text(ui_Label_hum, humStr);
-
+    Serial.printf("Weather updated: %s, %s\n", condition, tempStr);
 }
