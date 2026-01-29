@@ -618,10 +618,10 @@ void setup() {
     // UI shell already initialized in Stage 2 - just start animations
     // (ui_shell_start() was already called, don't call it again!)
     
-    // Start walking animation
-    ui_animation_play(ANIM_WALKING);
-    walkingAnimActive = true;
-    Serial.println("✓ Animation started");
+    // DISABLED: Walking animation crashes LVGL when SD card assets missing
+    // ui_animation_play(ANIM_WALKING);
+    // walkingAnimActive = true;
+    Serial.println("⊘ Animation disabled (prevents crash without SD assets)");
     
     // Update initial UI state
     ui_shell_update_battery(systemStats.getBatteryLevel(), systemStats.isCharging());
@@ -642,8 +642,19 @@ void setup() {
 // ============================================================================
 
 void loop() {
+    static unsigned long lastDebugTime = 0;
+    static unsigned long loopCount = 0;
+    
     // Update LVGL (core UI rendering)
     lv_timer_handler();
+    loopCount++;
+    
+    // Debug: Print LVGL tick every second to confirm loop is running
+    if (millis() - lastDebugTime >= 1000) {
+        Serial.printf("[LOOP] LVGL running - %lu ticks/sec\n", loopCount);
+        loopCount = 0;
+        lastDebugTime = millis();
+    }
     
     // Handle button/keyboard input
     handleInput();

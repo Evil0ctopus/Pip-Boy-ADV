@@ -14,7 +14,7 @@ static AnimationState anim_state = {
 
 // Animation timer callback
 static void animation_timer_callback(lv_timer_t *timer) {
-    if (!anim_state.is_playing) return;
+    if (!anim_state.is_playing || anim_state.img_obj == NULL) return;
     
     // Update frame
     anim_state.current_frame++;
@@ -23,7 +23,11 @@ static void animation_timer_callback(lv_timer_t *timer) {
     }
     
     // Load and display the frame
-    ui_animation_load_frame(anim_state.type, anim_state.current_frame);
+    if (!ui_animation_load_frame(anim_state.type, anim_state.current_frame)) {
+        // If frame fails to load, stop animation to prevent continuous errors
+        Serial.println("⚠ Animation frame load failed - stopping animation");
+        ui_animation_stop();
+    }
 }
 
 // Initialize animation system
@@ -74,6 +78,12 @@ void ui_animation_play(AnimationType type) {
     if (ui_animation_load_frame(type, 0)) {
         anim_state.is_playing = true;
         lv_timer_resume(anim_state.timer);
+        Serial.printf("✓ Animation started: type=%d frames=%d\n", type, anim_state.total_frames);
+    } else {
+        Serial.printf("⚠ Animation failed to load: type=%d (missing SD assets)\n", type);
+        // Don't start animation if frames can't load
+        anim_state.is_playing = false;
+        anim_state.type = ANIM_NONE;
     }
 }
 

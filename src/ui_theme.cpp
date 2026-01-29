@@ -245,7 +245,9 @@ bool ui_theme_is_sound_enabled() {
 void ui_theme_apply_crt_effects(lv_obj_t *screen) {
     if (!screen) return;
     
+    // DISABLED: Vignette overlay may interfere with display driver
     // Create vignette overlay (darker edges for CRT effect)
+    /*
     lv_obj_t *vignette = lv_obj_create(screen);
     lv_obj_set_size(vignette, 240, 135);
     lv_obj_set_pos(vignette, 0, 0);
@@ -253,6 +255,8 @@ void ui_theme_apply_crt_effects(lv_obj_t *screen) {
     lv_obj_clear_flag(vignette, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_flag(vignette, LV_OBJ_FLAG_IGNORE_LAYOUT);
     lv_obj_move_foreground(vignette);
+    */
+    Serial.println("⊘ CRT vignette disabled (prevents display interference)");
 }
 
 // ============================================================================
