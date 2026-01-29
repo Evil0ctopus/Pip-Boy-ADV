@@ -61,9 +61,10 @@ void ui_shell_init() {
     lv_scr_load(ui_screen_main);
     Serial.println("  ✓ UI loaded to display");
     
-    // Step 7: Show boot animation
-    ui_theme_create_boot_animation(ui_screen_main);
-    Serial.println("  ✓ Boot animation started");
+    // Step 7: Boot animation temporarily disabled for initial testing
+    // TODO: Re-enable after confirming UI displays correctly
+    // ui_theme_create_boot_animation(ui_screen_main);
+    Serial.println("  ○ Boot animation disabled (testing mode)");
     
     Serial.println("UI Shell: Ready");
 }

@@ -3,6 +3,10 @@
 #include "LoRaHelper.h"
 #include "AudioHelper.h"
 
+// External references to global instances from main.cpp
+extern LoRaHelper loraHelper;
+extern AudioHelper audio;
+
 // Radio tab UI elements
 lv_obj_t *ui_label_radio_status = NULL;
 lv_obj_t *ui_label_frequency = NULL;
@@ -178,7 +182,7 @@ void ui_radio_clear_messages() {
 
 // Send test packet callback
 void ui_radio_send_test_clicked(lv_event_t *e) {
-    if (!lora.isInitialized()) {
+    if (!loraHelper.isInitialized()) {
         ui_radio_add_message("LoRa not initialized!", true);
         audio.playError();
         return;
@@ -187,12 +191,12 @@ void ui_radio_send_test_clicked(lv_event_t *e) {
     // Send test packet
     const char *testMsg = "Pip-Boy ADV Test";
     
-    if (lora.send(testMsg)) {
+    if (loraHelper.send(testMsg)) {
         ui_radio_add_message(testMsg, true);
         audio.playSuccess();
         
         // Update stats
-        LoRaStats stats = lora.getStats();
+        LoRaStats stats = loraHelper.getStats();
         ui_radio_update_stats(stats.packets_received, stats.packets_sent);
     } else {
         ui_radio_add_message("Send failed!", true);
