@@ -1,0 +1,79 @@
+#include "TimeHelper.h"
+
+TimeHelper timeHelper;
+
+bool TimeHelper::begin(const char* timezone, const char* ntp1, const char* ntp2) {
+    _timezone = String(timezone);
+    _ntp1 = ntp1;
+    _ntp2 = ntp2;
+    _initialized = false;
+    _synced = false;
+    
+    if (WiFi.status() != WL_CONNECTED) {
+        Serial.println("TimeHelper: WiFi not connected, cannot sync time");
+        return false;
+    }
+    
+    // Configure NTP with timezone
+    configTime(0, 0, _ntp1, _ntp2);
+    setenv("TZ", timezone, 1);
+    tzset();
+    
+    _initialized = true;
+    
+    // Wait up to 5 seconds for initial sync
+    for (int i = 0; i < 10; i++) {
+        if (syncNTP()) {
+            _synced = true;
+            Serial.println("TimeHelper: NTP synchronized successfully");
+            return true;
+        }
+        delay(500);
+    }
+    
+    Serial.println("TimeHelper: Initial NTP sync timeout");
+    return false;
+}
+
+bool TimeHelper::syncNTP() {
+    struct tm timeinfo;
+    if (getLocalTime(&timeinfo, 1000)) {
+        _synced = true;
+        return true;
+    }
+    return false;
+}
+
+bool TimeHelper::getFormattedTime(char* buffer, size_t size, const char* format) {
+    if (!_initialized) return false;
+    
+    struct tm timeinfo;
+    if (getLocalTime(&timeinfo, 1000)) {
+        strftime(buffer, size, format, &timeinfo);
+        return true;
+    }
+    return false;
+}
+
+bool TimeHelper::getFormattedDate(char* buffer, size_t size, const char* format) {
+    if (!_initialized) return false;
+    
+    struct tm timeinfo;
+    if (getLocalTime(&timeinfo, 1000)) {
+        strftime(buffer, size, format, &timeinfo);
+        return true;
+    }
+    return false;
+}
+
+bool TimeHelper::isTimeSynced() {
+    return _synced;
+}
+
+unsigned long TimeHelper::getEpochTime() {
+    struct tm timeinfo;
+    if (getLocalTime(&timeinfo, 1000)) {
+        return mktime(&timeinfo);
+    }
+    return 0;
+}

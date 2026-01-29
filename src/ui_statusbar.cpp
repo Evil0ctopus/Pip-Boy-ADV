@@ -1,5 +1,6 @@
 #include "ui_statusbar.h"
 #include "ui_theme.h"
+#include <cstdio>
 
 // Status bar elements
 lv_obj_t *ui_statusbar = NULL;
@@ -33,7 +34,7 @@ void ui_statusbar_init(lv_obj_t *parent) {
     lv_obj_set_style_border_color(ui_statusbar, PIPBOY_GREEN_DARK, 0);
     lv_obj_set_style_border_width(ui_statusbar, 1, 0);
     lv_obj_set_style_border_side(ui_statusbar, LV_BORDER_SIDE_BOTTOM, 0);
-    lv_obj_set_style_pad_all(ui_statusbar, 2);
+    lv_obj_set_style_pad_all(ui_statusbar, 2, 0);
     lv_obj_set_style_radius(ui_statusbar, 0, 0);
     lv_obj_clear_flag(ui_statusbar, LV_OBJ_FLAG_SCROLLABLE);
     
@@ -48,21 +49,21 @@ void ui_statusbar_init(lv_obj_t *parent) {
     ui_statusbar_battery = lv_label_create(ui_statusbar);
     lv_label_set_text(ui_statusbar_battery, "100%");
     lv_obj_set_style_text_color(ui_statusbar_battery, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(ui_statusbar_battery, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(ui_statusbar_battery, &lv_font_montserrat_14, 0);
     lv_obj_align(ui_statusbar_battery, LV_ALIGN_RIGHT_MID, -2, 0);
     
     // WiFi indicator
     ui_statusbar_wifi = lv_label_create(ui_statusbar);
     lv_label_set_text(ui_statusbar_wifi, "W");
     lv_obj_set_style_text_color(ui_statusbar_wifi, PIPBOY_GREEN_DARK, 0);
-    lv_obj_set_style_text_font(ui_statusbar_wifi, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(ui_statusbar_wifi, &lv_font_montserrat_14, 0);
     lv_obj_align(ui_statusbar_wifi, LV_ALIGN_RIGHT_MID, -35, 0);
     
     // LoRa indicator
     ui_statusbar_lora = lv_label_create(ui_statusbar);
     lv_label_set_text(ui_statusbar_lora, "L");
     lv_obj_set_style_text_color(ui_statusbar_lora, PIPBOY_GREEN_DARK, 0);
-    lv_obj_set_style_text_font(ui_statusbar_lora, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(ui_statusbar_lora, &lv_font_montserrat_14, 0);
     lv_obj_align(ui_statusbar_lora, LV_ALIGN_RIGHT_MID, -45, 0);
 }
 

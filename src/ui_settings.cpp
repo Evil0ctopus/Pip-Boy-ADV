@@ -49,7 +49,7 @@ void ui_settings_init(lv_obj_t *parent) {
     lv_obj_t *title = lv_label_create(parent);
     lv_label_set_text(title, "DATA");
     lv_obj_set_style_text_color(title, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
     lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 5);
     
     // Brightness label
@@ -94,7 +94,7 @@ void ui_settings_init(lv_obj_t *parent) {
     lv_obj_t *device_info = lv_label_create(parent);
     lv_label_set_text(device_info, "M5Stack Cardputer ADV\nESP32-S3\n240x135 Display");
     lv_obj_set_style_text_color(device_info, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(device_info, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(device_info, &lv_font_montserrat_14, 0);
     lv_obj_align(device_info, LV_ALIGN_TOP_LEFT, 10, 115);
 }
 

@@ -80,7 +80,7 @@ IMUData SensorHelper::readIMU() {
     data.gyroZ = imu_data.gyro.z - gyroOffsetZ;
     
     // Temperature from IMU
-    data.temperature = M5.Imu.getTemp();
+    M5.Imu.getTemp(&data.temperature);
     
     // Calculate orientation
     float ax = data.accelX;
@@ -178,7 +178,9 @@ uint16_t SensorHelper::getAmbientLight() {
 
 float SensorHelper::getTemperature() {
     if (imuAvailable) {
-        return M5.Imu.getTemp();
+        float temp;
+        M5.Imu.getTemp(&temp);
+        return temp;
     } else if (envAvailable) {
         EnvironmentData env = readEnvironment();
         return env.temperature;

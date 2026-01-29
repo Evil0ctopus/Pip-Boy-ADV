@@ -9,14 +9,6 @@
 #define PIPBOY_BG lv_color_make(0x00, 0x22, 0x00)
 #define PIPBOY_BLACK lv_color_make(0x00, 0x00, 0x00)
 
-// Tab indices
-enum {
-    TAB_STATS = 0,
-    TAB_RADIO,
-    TAB_INVENTORY,
-    TAB_SETTINGS
-};
-
 // Global UI objects
 extern lv_obj_t *ui_tabview;
 extern lv_obj_t *ui_tab_stats;

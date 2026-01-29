@@ -30,41 +30,41 @@ void ui_radio_init(lv_obj_t *parent) {
     ui_label_radio_status = lv_label_create(parent);
     lv_label_set_text(ui_label_radio_status, "Status: Initializing...");
     lv_obj_set_style_text_color(ui_label_radio_status, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(ui_label_radio_status, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(ui_label_radio_status, &lv_font_montserrat_14, 0);
     lv_obj_align(ui_label_radio_status, LV_ALIGN_TOP_LEFT, 5, 20);
     
     // Frequency display
     ui_label_frequency = lv_label_create(parent);
     lv_label_set_text(ui_label_frequency, "Freq: 915.0 MHz");
     lv_obj_set_style_text_color(ui_label_frequency, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(ui_label_frequency, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(ui_label_frequency, &lv_font_montserrat_14, 0);
     lv_obj_align(ui_label_frequency, LV_ALIGN_TOP_LEFT, 5, 35);
     
     // RSSI display
     ui_label_rssi = lv_label_create(parent);
     lv_label_set_text(ui_label_rssi, "RSSI: -- dBm");
     lv_obj_set_style_text_color(ui_label_rssi, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(ui_label_rssi, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(ui_label_rssi, &lv_font_montserrat_14, 0);
     lv_obj_align(ui_label_rssi, LV_ALIGN_TOP_RIGHT, -5, 20);
     
     // SNR display
     ui_label_snr = lv_label_create(parent);
     lv_label_set_text(ui_label_snr, "SNR: -- dB");
     lv_obj_set_style_text_color(ui_label_snr, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(ui_label_snr, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(ui_label_snr, &lv_font_montserrat_14, 0);
     lv_obj_align(ui_label_snr, LV_ALIGN_TOP_RIGHT, -5, 35);
     
     // Packet stats
     ui_label_packets_rx = lv_label_create(parent);
     lv_label_set_text(ui_label_packets_rx, "RX: 0");
     lv_obj_set_style_text_color(ui_label_packets_rx, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(ui_label_packets_rx, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(ui_label_packets_rx, &lv_font_montserrat_14, 0);
     lv_obj_align(ui_label_packets_rx, LV_ALIGN_TOP_LEFT, 5, 50);
     
     ui_label_packets_tx = lv_label_create(parent);
     lv_label_set_text(ui_label_packets_tx, "TX: 0");
     lv_obj_set_style_text_color(ui_label_packets_tx, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(ui_label_packets_tx, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(ui_label_packets_tx, &lv_font_montserrat_14, 0);
     lv_obj_align(ui_label_packets_tx, LV_ALIGN_TOP_LEFT, 60, 50);
     
     // Message area

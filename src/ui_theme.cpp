@@ -39,7 +39,7 @@ void ui_theme_init() {
     // Title label style
     lv_style_init(&style_label_title);
     lv_style_set_text_color(&style_label_title, PIPBOY_GREEN_BRIGHT);
-    lv_style_set_text_font(&style_label_title, &lv_font_montserrat_18);
+    lv_style_set_text_font(&style_label_title, &lv_font_montserrat_16);
     
     // Normal label style
     lv_style_init(&style_label_normal);
@@ -49,7 +49,7 @@ void ui_theme_init() {
     // Small label style
     lv_style_init(&style_label_small);
     lv_style_set_text_color(&style_label_small, PIPBOY_GREEN_MED);
-    lv_style_set_text_font(&style_label_small, &lv_font_montserrat_10);
+    lv_style_set_text_font(&style_label_small, &lv_font_montserrat_14);
     
     // Button style
     lv_style_init(&style_button);

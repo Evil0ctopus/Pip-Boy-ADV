@@ -2,6 +2,7 @@
 #include "ui_animations.h"
 #include "ui_settings.h"
 #include "ui_radio.h"
+#include <cstdio>
 
 // Global UI objects
 lv_obj_t *ui_tabview = NULL;
@@ -42,14 +43,14 @@ static void create_stats_tab() {
     lv_obj_t *title = lv_label_create(ui_tab_stats);
     lv_label_set_text(title, "STAT");
     lv_obj_set_style_text_color(title, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
     lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 5);
     
     // Time label
     ui_label_time = lv_label_create(ui_tab_stats);
     lv_label_set_text(ui_label_time, "12:00:00");
     lv_obj_set_style_text_color(ui_label_time, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(ui_label_time, &lv_font_montserrat_18, 0);
+    lv_obj_set_style_text_font(ui_label_time, &lv_font_montserrat_16, 0);
     lv_obj_align(ui_label_time, LV_ALIGN_TOP_MID, 0, 30);
     
     // Date label
@@ -111,7 +112,7 @@ static void create_inventory_tab() {
     lv_obj_t *title = lv_label_create(ui_tab_inventory);
     lv_label_set_text(title, "ITEMS");
     lv_obj_set_style_text_color(title, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
     lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 5);
     
     lv_obj_t *subtitle = lv_label_create(ui_tab_inventory);
@@ -123,7 +124,7 @@ static void create_inventory_tab() {
     lv_obj_t *info = lv_label_create(ui_tab_inventory);
     lv_label_set_text(info, "Expandable for:\n- File Manager\n- Data Viewer\n- Config Editor");
     lv_obj_set_style_text_color(info, PIPBOY_GREEN, 0);
-    lv_obj_set_style_text_font(info, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(info, &lv_font_montserrat_14, 0);
     lv_obj_align(info, LV_ALIGN_BOTTOM_MID, 0, -10);
 }
 
@@ -162,8 +163,8 @@ void ui_main_init() {
     create_inventory_tab();
     ui_settings_init(ui_tab_settings);
     
-    // Start with Stats tab
-    lv_tabview_set_act(ui_tabview, TAB_STATS, LV_ANIM_OFF);
+    // Start with STATUS tab (index 0)
+    lv_tabview_set_act(ui_tabview, 0, LV_ANIM_OFF);
 }
 
 // Update time display
