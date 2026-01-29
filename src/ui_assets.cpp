@@ -53,12 +53,14 @@ static lv_img_dsc_t* create_img_dsc_from_file(const char *path) {
 
 // Initialize asset loading system
 bool ui_assets_init() {
+    // Attempt SD card initialization, but don't fail if unavailable
     if (!SD.begin()) {
-        Serial.println("SD Card initialization failed!");
-        return false;
+        Serial.println("⚠ SD Card not available - assets will be unavailable");
+        Serial.println("  UI will run without boot animation and custom images");
+        return false;  // Return false but don't block boot
     }
     
-    Serial.println("SD Card initialized successfully");
+    Serial.println("✓ SD Card initialized - assets available");
     
     // Pre-load some key assets (optional - can also load on-demand)
     // For now, we'll load on-demand to save memory
@@ -68,11 +70,19 @@ bool ui_assets_init() {
 
 // Load specific image from SD card
 lv_img_dsc_t* ui_assets_load_image(const char *path) {
-    // Check if file exists
-    if (!SD.exists(path)) {
-        Serial.printf("Image not found: %s\n", path);
+    // Check if SD is available first
+    if (!SD.begin()) {
+        Serial.println("⚠ Cannot load asset - SD not initialized");
         return NULL;
     }
+    
+    // Check if file exists
+    if (!SD.exists(path)) {
+        Serial.printf("⚠ Image not found: %s (will skip)\n", path);
+        return NULL;  // Return NULL but don't crash
+    }
+    
+    Serial.printf("  → Loading: %s\n", path);
     
     // For LVGL to load PNG directly, we can use the file path
     // LVGL 8.x has built-in PNG decoder support if enabled

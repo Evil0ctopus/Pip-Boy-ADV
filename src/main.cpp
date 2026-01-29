@@ -117,9 +117,11 @@ void lvgl_setup() {
     
     // Initialize LVGL core
     lv_init();
+    Serial.println("  ✓ LVGL core initialized (v8.4.0)");
 
     // Initialize display buffer with double buffering
     lv_disp_draw_buf_init(&draw_buf, buf1, buf2, DISPLAY_WIDTH * 10);
+    Serial.printf("  ✓ Display buffers allocated (2x %d bytes)\n", DISPLAY_WIDTH * 10 * sizeof(lv_color_t));
 
     // Configure display driver
     static lv_disp_drv_t disp_drv;
@@ -129,11 +131,13 @@ void lvgl_setup() {
     disp_drv.ver_res = DISPLAY_HEIGHT;
     disp_drv.flush_cb = lvgl_display_flush;
     disp_drv.draw_buf = &draw_buf;
+    Serial.printf("  ✓ Display driver configured (%dx%d)\n", DISPLAY_WIDTH, DISPLAY_HEIGHT);
 
     // Register display driver
     lv_disp_drv_register(&disp_drv);
+    Serial.println("  ✓ Display driver registered");
     
-    Serial.println("✓ LVGL initialized");
+    Serial.println("✓ LVGL initialization complete");
 }
 
 /**
@@ -382,10 +386,19 @@ void setup() {
     cfg.internal_mic = false;  // Cardputer ADV may not have mic
     
     M5.begin(cfg);
+    
+    // Explicitly initialize display
+    M5.Display.begin();
+    Serial.println("  ✓ Display hardware initialized");
+    
     M5.Display.setRotation(DISPLAY_ROTATION);
+    Serial.println("  ✓ Display rotation set to landscape");
+    
     M5.Display.setBrightness(currentBrightness);
+    Serial.println("  ✓ Display brightness configured");
     
     Serial.println("✓ M5Unified initialized");
+    Serial.println("  Display: 240x135 @ Rotation 1");
 
     // ========================================================================
     // Stage 2: LVGL and UI Initialization
@@ -393,11 +406,14 @@ void setup() {
     Serial.println("\n=== Stage 2: LVGL Initialization ===");
     
     lvgl_setup();
+    Serial.println("  → LVGL ready for UI creation");
     
     // Initialize UI shell (creates main screen, status bar, tabs)
+    Serial.println("  → Creating UI shell...");
     ui_shell_init();
     
-    Serial.println("✓ UI shell loaded");
+    Serial.println("✓ UI shell loaded and displayed");
+    Serial.println("  → Screen should be visible now!");
 
     // ========================================================================
     // Stage 3: Hardware Module Initialization
