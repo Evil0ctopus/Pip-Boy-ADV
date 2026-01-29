@@ -397,6 +397,17 @@ void setup() {
     M5.Display.setBrightness(currentBrightness);
     Serial.println("  ✓ Display brightness configured");
     
+    // Draw test pattern to verify display is working
+    M5.Display.fillScreen(TFT_BLACK);
+    M5.Display.setTextColor(TFT_GREEN);
+    M5.Display.setTextSize(2);
+    M5.Display.setCursor(10, 50);
+    M5.Display.println("PIP-BOY ADV");
+    M5.Display.setTextSize(1);
+    M5.Display.setCursor(10, 80);
+    M5.Display.println("Initializing...");
+    Serial.println("  ✓ Test pattern displayed");
+    
     Serial.println("✓ M5Unified initialized");
     Serial.println("  Display: 240x135 @ Rotation 1");
 
@@ -411,6 +422,11 @@ void setup() {
     // Initialize UI shell (creates main screen, status bar, tabs)
     Serial.println("  → Creating UI shell...");
     ui_shell_init();
+    
+    // Force LVGL to render immediately
+    lv_timer_handler();
+    lv_refr_now(NULL);
+    Serial.println("  ✓ Screen refreshed");
     
     Serial.println("✓ UI shell loaded and displayed");
     Serial.println("  → Screen should be visible now!");
@@ -597,10 +613,10 @@ void setup() {
     // ========================================================================
     // Stage 9: Launch UI
     // ========================================================================
-    Serial.println("\n=== Stage 9: Launching UI ===");
+    Serial.println("\n=== Stage 9: Final UI Setup ===");
     
-    // Start the UI shell (initializes and loads the interface)
-    ui_shell_start();
+    // UI shell already initialized in Stage 2 - just start animations
+    // (ui_shell_start() was already called, don't call it again!)
     
     // Start walking animation
     ui_animation_play(ANIM_WALKING);
