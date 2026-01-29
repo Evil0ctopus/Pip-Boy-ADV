@@ -1,72 +1,83 @@
-﻿{
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Build + Upload + Monitor (USB)",
-            "type": "shell",
-            "command": "pio",
-            "args": [
-                "run",
-                "--target", "upload",
-                "--target", "monitor"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": false,
-                "showReuseMessage": false
-            },
-            "problemMatcher": ["$platformio"]
-        },
-        {
-            "label": "Build Only",
-            "type": "shell",
-            "command": "pio",
-            "args": ["run"],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true,
-                "showReuseMessage": false
-            },
-            "problemMatcher": ["$platformio"]
-        },
-        {
-            "label": "Monitor Only",
-            "type": "shell",
-            "command": "pio",
-            "args": ["device", "monitor", "--baud", "115200"],
-            "group": "none",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": false,
-                "showReuseMessage": false
-            },
-            "isBackground": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "Build & Package OTA Firmware",
-            "type": "shell",
-            "command": "powershell",
-            "args": ["-ExecutionPolicy", "Bypass", "-File", "package.ps1", "D"],
-            "group": "none",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "clear": true,
-                "showReuseMessage": false
-            },
-            "problemMatcher": []
-        }
-    ]
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build + Upload + Monitor (USB)",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy", "Bypass",
+        "-NoProfile",
+        "-Command",
+        "Write-Host 'Building firmware...' -ForegroundColor Cyan; pio run; if ($LASTEXITCODE -eq 0) { Write-Host 'Upload starting...' -ForegroundColor Green; pio run --target upload; if ($LASTEXITCODE -eq 0) { Write-Host 'Opening serial monitor...' -ForegroundColor Green; Start-Sleep -Seconds 2; pio device monitor } else { Write-Host 'Upload failed!' -ForegroundColor Red; exit 1 } } else { Write-Host 'Build failed!' -ForegroundColor Red; exit 1 }"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": false,
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "Build Only",
+      "type": "shell",
+      "command": "pio",
+      "args": ["run"],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": ["$platformio"]
+    },
+
+    {
+      "label": "Upload Only",
+      "type": "shell",
+      "command": "pio",
+      "args": ["run", "--target", "upload"],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": ["$platformio"]
+    },
+
+    {
+      "label": "Monitor Only",
+      "type": "shell",
+      "command": "pio",
+      "args": ["device", "monitor", "--baud", "115200"],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "Build & Package OTA Firmware",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", "package.ps1", "D"],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    }
+  ]
 }
