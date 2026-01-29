@@ -56,6 +56,7 @@ public:
     LoRaHelper();
     
     // Initialization
+    bool isAvailable();  // Check if LoRa hardware is present
     bool begin();
     bool begin(float freq, float bw, uint8_t sf, uint8_t cr, uint8_t power);
     void end();

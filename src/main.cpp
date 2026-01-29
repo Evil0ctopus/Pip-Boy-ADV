@@ -546,26 +546,36 @@ void setup() {
     // ========================================================================
     Serial.println("\n=== Stage 6: LoRa Initialization ===");
     
-    if (loraHelper.begin()) {
-        Serial.printf("✓ LoRa initialized @ %.1f MHz\n", LORA_DEFAULT_FREQ);
-        ui_radio_update_status(true, true);
-        ui_radio_update_frequency(LORA_DEFAULT_FREQ);
-        ui_shell_update_lora(true, 0);
+    // Check if LoRa hardware is present before initializing
+    if (loraHelper.isAvailable()) {
+        Serial.println("✓ LoRa hardware detected - initializing...");
         
-        // Start LoRa receive task
-        xTaskCreatePinnedToCore(
-            loraReceiveTask,
-            "LoRaTask",
-            4096,
-            NULL,
-            2,
-            &loraTaskHandle,
-            1
-        );
+        if (loraHelper.begin()) {
+            Serial.printf("✓ LoRa initialized @ %.1f MHz\n", LORA_DEFAULT_FREQ);
+            ui_radio_update_status(true, true);
+            ui_radio_update_frequency(LORA_DEFAULT_FREQ);
+            ui_shell_update_lora(true, 0);
+            
+            // Start LoRa receive task
+            xTaskCreatePinnedToCore(
+                loraReceiveTask,
+                "LoRaTask",
+                4096,
+                NULL,
+                2,
+                &loraTaskHandle,
+                1
+            );
+        } else {
+            Serial.println("⚠ LoRa initialization failed - check configuration");
+            ui_radio_update_status(false, false);
+            ui_radio_add_message("LoRa init failed - Check config", false);
+        }
     } else {
-        Serial.println("⚠ LoRa initialization failed - check hat connection");
+        Serial.println("⊘ LoRa hardware not detected - skipping");
+        Serial.println("  (This is normal if SX1262 hat is not installed)");
         ui_radio_update_status(false, false);
-        ui_radio_add_message("LoRa init failed - Check SX1262 hat", false);
+        ui_radio_add_message("No LoRa hardware detected", false);
     }
 
     // ========================================================================
