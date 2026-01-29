@@ -1,8 +1,5 @@
 #include "LoRaHelper.h"
 
-// Global instance
-LoRaHelper lora;
-
 LoRaHelper::LoRaHelper() : 
     radio(nullptr),
     loraSPI(nullptr),

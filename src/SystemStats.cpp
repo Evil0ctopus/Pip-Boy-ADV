@@ -1,8 +1,6 @@
 #include "SystemStats.h"
 #include "ui_shell.h"
 
-SystemStats systemStats;
-
 void SystemStats::begin() {
     _lastUpdate = 0;
     _freeHeap = 0;

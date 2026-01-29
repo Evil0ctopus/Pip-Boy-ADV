@@ -1,8 +1,5 @@
 #include "AudioHelper.h"
 
-// Global instance
-AudioHelper audio;
-
 AudioHelper::AudioHelper() : 
     currentVolume(128),
     muted(false),

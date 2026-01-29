@@ -28,7 +28,6 @@
 #include "ui_tabs.h"         // Tab navigation UI
 
 // Helper Modules - Hardware and utility abstractions
-// WiFi, Weather, and NTP removed for standalone operation
 #include "LEDHelper.h"       // NeoPixel LED control
 #include "AudioHelper.h"     // Speaker/audio output
 #include "SensorHelper.h"    // IMU sensor integration
@@ -36,6 +35,18 @@
 #include "BluetoothHelper.h" // Bluetooth functionality
 #include "KeyboardHelper.h"  // Keyboard input handling
 #include "SystemStats.h"     // System statistics monitoring
+
+// New Optional Modules
+#include "IRHelper.h"        // IR capture/replay (M5 IR Unit)
+#include "GPSHelper.h"       // GPS module (NEO-6M/NEO-M8N)
+#include "FileBrowser.h"     // SD card file browser
+#include "TerminalHelper.h"  // Shell terminal
+#include "WiFiManager.h"     // Wi-Fi management
+#include "MapRenderer.h"     // Map rendering
+#include "PluginSystem.h"    // Plugin loader
+
+// Module integration layer
+#include "ModuleIntegration.h"
 
 // ============================================================================
 // Global Variables
@@ -59,6 +70,24 @@ bool walkingAnimActive = false;        // Animation state flag
 // Task Handles (for FreeRTOS tasks)
 TaskHandle_t loraTaskHandle = NULL;
 TaskHandle_t sensorTaskHandle = NULL;
+
+// Global helper instances
+AudioHelper audio;
+SensorHelper sensorHelper;
+SystemStats systemStats;
+LoRaHelper loraHelper;
+
+// Optional module instances (gracefully handle missing hardware)
+IRHelper irHelper;
+GPSHelper gpsHelper;
+FileBrowser fileBrowser;
+TerminalHelper terminalHelper;
+WiFiManager wifiManager;
+MapRenderer mapRenderer;
+PluginSystem pluginSystem;
+
+// Module integration layer (after all module instances)
+ModuleIntegration modules;
 
 // ============================================================================
 // LVGL Setup and Display Driver
@@ -205,8 +234,8 @@ void loraReceiveTask(void *pvParameters) {
     Serial.println("LoRa receive task started");
     
     while (true) {
-        if (lora.isInitialized() && lora.available()) {
-            LoRaPacket packet = lora.receive();
+        if (loraHelper.isInitialized() && loraHelper.available()) {
+            LoRaPacket packet = loraHelper.receive();
             
             if (packet.valid) {
                 // Convert packet data to string
@@ -221,7 +250,7 @@ void loraReceiveTask(void *pvParameters) {
                 ui_radio_update_snr(packet.snr);
                 
                 // Update statistics
-                LoRaStats stats = lora.getStats();
+                LoRaStats stats = loraHelper.getStats();
                 ui_radio_update_stats(stats.packets_received, stats.packets_sent);
                 
                 // Update status bar
@@ -391,6 +420,56 @@ void setup() {
     Serial.println("✓ System stats initialized");
 
     // ========================================================================
+    // Stage 3.5: Optional Module Initialization
+    // ========================================================================
+    Serial.println("\n=== Optional Modules ===");
+    
+    // Initialize IR Helper (optional)
+    if (irHelper.begin()) {
+        Serial.println("✓ IR Helper available");
+    } else {
+        Serial.println("○ IR Helper not available (optional)");
+    }
+    
+    // Initialize GPS Helper (optional)
+    if (gpsHelper.begin()) {
+        Serial.println("✓ GPS Helper available");
+    } else {
+        Serial.println("○ GPS Helper not available (optional)");
+    }
+    
+    // Initialize File Browser
+    if (fileBrowser.begin()) {
+        Serial.println("✓ File Browser initialized");
+    } else {
+        Serial.println("○ File Browser unavailable");
+    }
+    
+    // Initialize Map Renderer
+    mapRenderer.begin();
+    Serial.println("✓ Map Renderer initialized");
+    
+    // Initialize Plugin System
+    if (pluginSystem.begin()) {
+        Serial.println("✓ Plugin System initialized");
+    } else {
+        Serial.println("○ Plugin System unavailable");
+    }
+    
+    // Initialize LoRa Helper (optional)
+    if (loraHelper.begin()) {
+        Serial.println("✓ LoRa Helper available");
+    } else {
+        Serial.println("○ LoRa Helper not available (optional)");
+    }
+    
+    // Initialize Module Integration Layer
+    modules.init();
+    Serial.println("✓ Module integration layer initialized");
+    
+    Serial.println("○ WiFi disabled (enable in SYSTEM tab)");
+
+    // ========================================================================
     // Stage 4: SD Card and Configuration
     // ========================================================================
     Serial.println("\n=== Stage 4: SD Card & Configuration ===");
@@ -435,7 +514,7 @@ void setup() {
     // ========================================================================
     Serial.println("\n=== Stage 6: LoRa Initialization ===");
     
-    if (lora.begin()) {
+    if (loraHelper.begin()) {
         Serial.printf("✓ LoRa initialized @ %.1f MHz\n", LORA_DEFAULT_FREQ);
         ui_radio_update_status(true, true);
         ui_radio_update_frequency(LORA_DEFAULT_FREQ);
@@ -536,6 +615,9 @@ void loop() {
     
     // Handle button/keyboard input
     handleInput();
+    
+    // Update all modules via integration layer
+    modules.update();
     
     // Small delay to prevent CPU overload (5ms matches LVGL tick)
     delay(5);
