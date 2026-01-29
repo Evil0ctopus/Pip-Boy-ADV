@@ -53,12 +53,8 @@ static lv_color_t buf2[DISPLAY_WIDTH * 10];  // Buffer 2: for double buffering
 // SPI instance for SD card (HSPI)
 SPIClass *hspi = new SPIClass(HSPI);
 
-// Configuration Variables (loaded from SD card /config.txt)
-String WIFI_SSID = "";
-String WIFI_PASSWORD = "";
-String TIME_ZONE = "PST8PDT,M3.2.0,M11.1.0";  // Default to Pacific Time
-String API_KEY = "";
-String LOCATION = "";
+// Configuration Variables are defined in ConfigHelper.cpp and declared extern in Config.h
+// No need to redefine them here - just include Config.h to use them
 
 // System State Variables
 int currentBrightness = 128;           // LCD brightness (0-255)

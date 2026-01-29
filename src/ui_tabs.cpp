@@ -6,6 +6,7 @@
 // ============================================================================
 
 #include "ui_tabs.h"
+#include "ui_main.h"      // For legacy tab variable declarations
 #include "ui_theme.h"
 #include "ui_radio.h"
 #include "ui_settings.h"
@@ -21,14 +22,11 @@ lv_obj_t *ui_tabview_main = NULL;
 lv_obj_t *ui_tab_status = NULL;
 lv_obj_t *ui_tab_data = NULL;
 lv_obj_t *ui_tab_map = NULL;
-lv_obj_t *ui_tab_radio = NULL;
 lv_obj_t *ui_tab_system = NULL;
-lv_obj_t *ui_animation_container = NULL;
 
-// Legacy aliases for compatibility
-lv_obj_t *ui_tab_stats = NULL;
-lv_obj_t *ui_tab_inventory = NULL;
-lv_obj_t *ui_tab_settings = NULL;
+// Legacy tab aliases (ui_tab_radio, ui_animation_container, ui_tab_stats, 
+// ui_tab_inventory, ui_tab_settings) are defined in ui_main.cpp
+// and declared extern in ui_main.h - DO NOT redefine them here
 
 // ============================================================================
 // STATUS Tab UI Elements
@@ -39,7 +37,7 @@ static lv_obj_t *ui_label_status_date = NULL;
 static lv_obj_t *ui_label_status_weather = NULL;
 static lv_obj_t *ui_label_status_temp = NULL;
 static lv_obj_t *ui_bar_battery = NULL;
-static lv_obj_t *ui_label_battery = NULL;
+static lv_obj_t *ui_label_status_battery = NULL;  // Renamed to avoid conflict with ui_main.h
 
 // ============================================================================
 // DATA Tab UI Elements
@@ -229,10 +227,10 @@ void ui_tabs_create_status(lv_obj_t *parent) {
     // Bottom: Battery Status
     // ========================================================================
     
-    ui_label_battery = lv_label_create(parent);
-    lv_label_set_text(ui_label_battery, "POWER:");
-    ui_theme_apply_label_small(ui_label_battery);
-    lv_obj_align(ui_label_battery, LV_ALIGN_BOTTOM_LEFT, 3, -2);
+    ui_label_status_battery = lv_label_create(parent);
+    lv_label_set_text(ui_label_status_battery, "POWER:");
+    ui_theme_apply_label_small(ui_label_status_battery);
+    lv_obj_align(ui_label_status_battery, LV_ALIGN_BOTTOM_LEFT, 3, -2);
     
     ui_bar_battery = lv_bar_create(parent);
     lv_obj_set_size(ui_bar_battery, 140, 10);
