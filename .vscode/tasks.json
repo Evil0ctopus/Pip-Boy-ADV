@@ -22,6 +22,28 @@
                 "showReuseMessage": false
             },
             "problemMatcher": []
+        },
+        {
+            "label": "Build & Package OTA Firmware",
+            "type": "shell",
+            "options": {
+                "shell": {
+                    "executable": "powershell.exe",
+                    "args": ["-NoProfile", "-Command"]
+                }
+            },
+            "command": "Write-Host 'Building Pip-Boy ADV OTA firmware bundle...' -ForegroundColor Cyan; pio run; if ($LASTEXITCODE -eq 0) { Write-Host 'Build successful! Packaging OTA firmware...' -ForegroundColor Green; $sdDrive = 'D:'; $otaPath = Join-Path $sdDrive 'firmwares\\PipBoyADV'; $buildPath = '.pio\\build\\cardputer-adv'; Write-Host 'Creating OTA firmware directory...' -ForegroundColor Yellow; New-Item -ItemType Directory -Path $otaPath -Force | Out-Null; Write-Host 'Copying firmware.bin...' -ForegroundColor Yellow; Copy-Item -Path (Join-Path $buildPath 'firmware.bin') -Destination (Join-Path $otaPath 'firmware.bin') -Force; Write-Host 'Copying bootloader.bin...' -ForegroundColor Yellow; Copy-Item -Path (Join-Path $buildPath 'bootloader.bin') -Destination (Join-Path $otaPath 'bootloader.bin') -Force; Write-Host 'Copying partitions.bin...' -ForegroundColor Yellow; Copy-Item -Path (Join-Path $buildPath 'partitions.bin') -Destination (Join-Path $otaPath 'partitions.bin') -Force; Write-Host 'Creating app.json manifest...' -ForegroundColor Yellow; $appJson = @{ name = 'Pip-Boy ADV'; version = '1.0.0'; author = 'Evil0ctopus'; description = 'Pip-Boy OS for Cardputer ADV'; type = 'firmware'; entry = 'firmware.bin' } | ConvertTo-Json -Depth 10; Set-Content -Path (Join-Path $otaPath 'app.json') -Value $appJson -Force; Write-Host ''; Write-Host 'OTA firmware bundle created successfully!' -ForegroundColor Green; Write-Host ''; Write-Host 'SD Card OTA Structure:' -ForegroundColor Cyan; Write-Host \"  $(Join-Path $sdDrive 'firmwares\\PipBoyADV\\firmware.bin')\" -ForegroundColor White; Write-Host \"  $(Join-Path $sdDrive 'firmwares\\PipBoyADV\\bootloader.bin')\" -ForegroundColor White; Write-Host \"  $(Join-Path $sdDrive 'firmwares\\PipBoyADV\\partitions.bin')\" -ForegroundColor White; Write-Host \"  $(Join-Path $sdDrive 'firmwares\\PipBoyADV\\app.json')\" -ForegroundColor White; Write-Host ''; Write-Host 'This firmware can now be installed from M5 Launcher > Install Firmware' -ForegroundColor Cyan } else { Write-Host 'Build failed! OTA packaging aborted.' -ForegroundColor Red; exit 1 }",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true,
+                "showReuseMessage": false
+            },
+            "problemMatcher": []
         }
     ]
 }
