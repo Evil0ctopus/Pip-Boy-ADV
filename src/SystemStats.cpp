@@ -1,6 +1,5 @@
 #include "SystemStats.h"
 #include "ui_shell.h"
-#include <WiFi.h>
 
 SystemStats systemStats;
 
@@ -30,12 +29,8 @@ void SystemStats::update() {
     _batteryLevel = M5.Power.getBatteryLevel();
     _charging = M5.Power.isCharging();
     
-    // Update WiFi stats
-    if (WiFi.status() == WL_CONNECTED) {
-        _wifiRSSI = WiFi.RSSI();
-    } else {
-        _wifiRSSI = -100;
-    }
+    // WiFi stats removed for standalone operation
+    _wifiRSSI = -100;
 }
 
 uint32_t SystemStats::getFreeHeap() {
@@ -96,11 +91,11 @@ float SystemStats::getBatteryCurrent() {
 }
 
 int SystemStats::getWiFiRSSI() {
-    return _wifiRSSI;
+    return -100;  // Always disconnected in standalone mode
 }
 
 bool SystemStats::isWiFiConnected() {
-    return WiFi.status() == WL_CONNECTED;
+    return false;  // Always disconnected in standalone mode
 }
 
 void SystemStats::startMonitorTask() {

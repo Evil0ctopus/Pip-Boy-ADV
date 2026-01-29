@@ -7,7 +7,6 @@
 
 #include <M5Unified.h>       // M5Unified library for Cardputer ADV support
 #include <lvgl.h>            // LVGL graphics library
-#include <WiFi.h>            // WiFi connectivity
 #include <SD.h>              // SD card filesystem
 #include <SPI.h>             // SPI communication
 #include <FS.h>              // File system
@@ -16,7 +15,6 @@
 // Includes - Configuration and Helper Modules
 // ============================================================================
 
-#include "Config.h"          // Configuration manager (uses Config class)
 #include "HardwareConfig.h"  // Hardware pin definitions for Cardputer ADV
 
 // UI System - Modular interface components
@@ -30,9 +28,7 @@
 #include "ui_tabs.h"         // Tab navigation UI
 
 // Helper Modules - Hardware and utility abstractions
-#include "WiFiHelper.h"      // WiFi management
-#include "WeatherHelper.h"   // Weather API integration
-#include "TimeHelper.h"      // NTP time synchronization
+// WiFi, Weather, and NTP removed for standalone operation
 #include "LEDHelper.h"       // NeoPixel LED control
 #include "AudioHelper.h"     // Speaker/audio output
 #include "SensorHelper.h"    // IMU sensor integration
@@ -58,22 +54,11 @@ SPIClass *hspi = new SPIClass(HSPI);
 
 // System State Variables
 int currentBrightness = 128;           // LCD brightness (0-255)
-unsigned long lastNTPSync = 0;         // Last NTP synchronization time
-unsigned long lastStatsUpdate = 0;     // Last system stats update
-unsigned long lastAnimToggle = 0;      // Last animation toggle time
 bool walkingAnimActive = false;        // Animation state flag
 
-// Task Timing Constants
-const unsigned long NTP_SYNC_INTERVAL = 300000;    // 5 minutes
-const unsigned long STATS_UPDATE_INTERVAL = 5000;  // 5 seconds
-const unsigned long UI_UPDATE_INTERVAL = 10000;    // 10 seconds
-
 // Task Handles (for FreeRTOS tasks)
-TaskHandle_t wifiTaskHandle = NULL;
-TaskHandle_t weatherTaskHandle = NULL;
 TaskHandle_t loraTaskHandle = NULL;
 TaskHandle_t sensorTaskHandle = NULL;
-TaskHandle_t statsTaskHandle = NULL;
 
 // ============================================================================
 // LVGL Setup and Display Driver
@@ -158,121 +143,9 @@ bool initializeSDCard() {
     return true;
 }
 
-/**
- * Load Configuration from SD Card
- * Reads /config.txt and populates global configuration variables
- */
-void loadConfigFromSD() {
-    Serial.println("Loading configuration from /config.txt...");
-    
-    File configFile = SD.open("/config.txt", FILE_READ);
-    if (!configFile) {
-        Serial.println("✗ Failed to open /config.txt");
-        Serial.println("Please create config.txt on SD card with:");
-        Serial.println("  WIFI_SSID=YourSSID");
-        Serial.println("  WIFI_PASSWORD=YourPassword");
-        Serial.println("  TIME_ZONE=PST8PDT,M3.2.0,M11.1.0");
-        Serial.println("  API_KEY=YourWeatherAPIKey");
-        Serial.println("  LOCATION=YourCity");
-        return;
-    }
-
-    // Parse configuration file line by line
-    char line[256];
-    while (configFile.available()) {
-        memset(line, 0, sizeof(line));
-        configFile.readBytesUntil('\n', line, sizeof(line) - 1);
-        
-        char *key = strtok(line, "=");
-        char *value = strtok(NULL, "\r\n");
-
-        if (key && value) {
-            // Trim whitespace
-            while (*value == ' ') value++;
-            
-            if (strcmp(key, "WIFI_SSID") == 0) {
-                WIFI_SSID = String(value);
-            } else if (strcmp(key, "WIFI_PASSWORD") == 0) {
-                WIFI_PASSWORD = String(value);
-            } else if (strcmp(key, "TIME_ZONE") == 0) {
-                TIME_ZONE = String(value);
-            } else if (strcmp(key, "API_KEY") == 0) {
-                API_KEY = String(value);
-            } else if (strcmp(key, "LOCATION") == 0) {
-                LOCATION = String(value);
-            }
-        }
-    }
-    
-    configFile.close();
-    
-    // Print loaded configuration (mask sensitive data)
-    Serial.println("✓ Configuration loaded:");
-    Serial.printf("  WiFi SSID: %s\n", WIFI_SSID.c_str());
-    Serial.printf("  WiFi Password: %s\n", WIFI_PASSWORD.length() > 0 ? "********" : "NOT SET");
-    Serial.printf("  Time Zone: %s\n", TIME_ZONE.c_str());
-    Serial.printf("  API Key: %s\n", API_KEY.length() > 0 ? "********" : "NOT SET");
-    Serial.printf("  Location: %s\n", LOCATION.c_str());
-}
-
 // ============================================================================
-// FreeRTOS Background Tasks
+// Keyboard/Input Handler
 // ============================================================================
-
-/**
- * WiFi Connection Task
- * Handles WiFi connection and NTP synchronization
- */
-void wifiConnectionTask(void *pvParameters) {
-    Serial.println("Starting WiFi connection...");
-    
-    LEDHelper led;
-    led.begin();
-    led.setLedColor(LedColor::RED);  // Red while connecting
-    
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(WIFI_SSID.c_str(), WIFI_PASSWORD.c_str());
-    
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 30) {
-        delay(500);
-        Serial.print(".");
-        attempts++;
-    }
-    
-    if (WiFi.status() == WL_CONNECTED) {
-        Serial.printf("\n✓ WiFi connected: %s\n", WiFi.localIP().toString().c_str());
-        Serial.printf("  RSSI: %d dBm\n", WiFi.RSSI());
-        
-        led.setLedColor(LedColor::BLUE);  // Blue when connected
-        
-        // Initialize NTP time synchronization
-        if (timeHelper.begin(TIME_ZONE.c_str())) {
-            Serial.println("✓ NTP time synchronized");
-            led.setLedColor(LedColor::GREEN);  // Green when fully ready
-        }
-        
-        // Update UI with WiFi status
-        ui_shell_update_wifi(true, WiFi.RSSI());
-        
-        // Start weather task after WiFi is connected
-        xTaskCreatePinnedToCore(
-            weatherTask,
-            "WeatherTask",
-            8192,
-            NULL,
-            1,
-            &weatherTaskHandle,
-            1
-        );
-    } else {
-        Serial.println("\n✗ WiFi connection failed");
-        ui_shell_update_wifi(false, -100);
-    }
-    
-    // Task complete, delete itself
-    vTaskDelete(NULL);
-}
 
 /**
  * System Statistics Monitoring Task
@@ -290,10 +163,7 @@ void systemStatsTask(void *pvParameters) {
         bool charging = systemStats.isCharging();
         ui_shell_update_battery(batteryLevel, charging);
         
-        // Update WiFi RSSI if connected
-        if (systemStats.isWiFiConnected()) {
-            ui_shell_update_wifi(true, systemStats.getWiFiRSSI());
-        }
+        // WiFi status update removed for standalone operation
         
         // Update DATA tab information
         ui_shell_update_cpu(systemStats.getCPUFreqMHz());
@@ -393,42 +263,6 @@ void sensorMonitorTask(void *pvParameters) {
 // ============================================================================
 // Time Update Functions
 // ============================================================================
-
-/**
- * Update Time Display from NTP
- * Called periodically to refresh time/date on UI
- */
-void updateTimeDisplay() {
-    if (!timeHelper.isTimeSynced()) {
-        return;
-    }
-    
-    char timeStr[16];
-    char dateStr[32];
-    
-    if (timeHelper.getFormattedTime(timeStr, sizeof(timeStr))) {
-        ui_shell_update_time(timeStr);
-    }
-    
-    if (timeHelper.getFormattedDate(dateStr, sizeof(dateStr))) {
-        ui_shell_update_date(dateStr);
-    }
-}
-
-/**
- * Periodic NTP Sync
- * Re-synchronizes time with NTP server
- */
-void periodicNTPSync() {
-    unsigned long now = millis();
-    
-    if (now - lastNTPSync >= NTP_SYNC_INTERVAL) {
-        if (WiFi.status() == WL_CONNECTED && timeHelper.syncNTP()) {
-            Serial.println("✓ NTP time re-synchronized");
-        }
-        lastNTPSync = now;
-    }
-}
 
 // ============================================================================
 // Input Handling
@@ -548,15 +382,10 @@ void setup() {
     Serial.println("\n=== Stage 4: SD Card & Configuration ===");
     
     if (!initializeSDCard()) {
-        ui_shell_update_date("SD CARD ERROR");
+        ui_shell_update_date("NO SD CARD");
         Serial.println("⚠ Continuing without SD card...");
     } else {
-        // Load configuration using Config class
-        if (Config::begin()) {
-            Serial.println("✓ Configuration loaded");
-        } else {
-            Serial.printf("⚠ Config load failed: %s\n", Config::getLastError().c_str());
-        }
+        Serial.println("✓ SD card detected");
         
         // Initialize asset loading system
         if (ui_assets_init()) {
@@ -646,45 +475,11 @@ void setup() {
     );
     Serial.println("✓ LVGL tick task started");
     
-    // WiFi and dependent services
-    if (Config::getWiFiSSID().length() > 0) {
-        // Initialize WiFi helper
-        WiFiHelper::begin();
-        
-        // Create WiFi connection task
-        xTaskCreatePinnedToCore(
-            [](void* param) {
-                if (WiFiHelper::connect()) {
-                    // WiFi connected, start dependent services
-                    
-                    // Initialize and start TimeHelper
-                    if (timeHelper.begin(Config::getTimeZone().c_str())) {
-                        Serial.println("✓ TimeHelper initialized");
-                    }
-                    
-                    // Initialize and start WeatherHelper
-                    if (WeatherHelper::begin()) {
-                        WeatherHelper::startUpdateTask();
-                        Serial.println("✓ WeatherHelper initialized");
-                    }
-                    
-                    // Start WiFi monitoring
-                    WiFiHelper::startMonitorTask();
-                }
-                vTaskDelete(NULL);
-            },
-            "WiFiInit",
-            8192,
-            NULL,
-            1,
-            &wifiTaskHandle,
-            1
-        );
-        Serial.println("✓ WiFi initialization task started");
-    } else {
-        Serial.println("⚠ WiFi disabled - no SSID configured");
-        ui_shell_update_wifi(false, -100);
-    }
+    // Network disabled for standalone operation
+    Serial.println("WiFi/Weather/NTP: Disabled (standalone mode)");
+    ui_shell_update_wifi(false, 0);
+    ui_shell_update_date("OFFLINE");
+    ui_shell_update_time("--:--");
     
     // System stats monitoring task
     systemStats.startMonitorTask();
@@ -727,16 +522,6 @@ void loop() {
     
     // Handle button/keyboard input
     handleInput();
-    
-    // Update time display periodically
-    static unsigned long lastUIUpdate = 0;
-    if (millis() - lastUIUpdate >= UI_UPDATE_INTERVAL) {
-        updateTimeDisplay();
-        lastUIUpdate = millis();
-    }
-    
-    // Periodic NTP synchronization
-    periodicNTPSync();
     
     // Small delay to prevent CPU overload (5ms matches LVGL tick)
     delay(5);
