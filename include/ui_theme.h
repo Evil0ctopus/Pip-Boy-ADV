@@ -2,6 +2,10 @@
 #define UI_THEME_H
 
 #include <lvgl.h>
+#include "version.h"  // Auto-generated version file
+
+// Device Information
+#define DEVICE_MODEL "M5Stack Cardputer ADV"
 
 // Pip-Boy Green Color Palette
 #define PIPBOY_GREEN_BRIGHT    lv_color_make(0x33, 0xFF, 0x33)
@@ -36,8 +40,22 @@ extern lv_style_t style_tabview;
 extern lv_style_t style_tab_active;
 extern lv_style_t style_tab_inactive;
 
+// CRT effect styles
+extern lv_style_t style_crt_scanlines;
+extern lv_style_t style_crt_vignette;
+
 // Theme initialization
 void ui_theme_init();
+void ui_theme_apply_crt_effects(lv_obj_t *screen);
+void ui_theme_create_boot_animation(lv_obj_t *parent);
+
+// Sound effects system
+void ui_theme_init_audio();
+void ui_theme_play_boot_chime();
+void ui_theme_play_tab_change();
+void ui_theme_play_button_press();
+void ui_theme_set_sound_enabled(bool enabled);
+bool ui_theme_is_sound_enabled();
 
 // Apply theme to specific objects
 void ui_theme_apply_screen(lv_obj_t *obj);

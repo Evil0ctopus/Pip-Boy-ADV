@@ -59,6 +59,22 @@ static lv_obj_t *ui_label_map_coords = NULL;
 static lv_obj_t *ui_label_map_status = NULL;
 
 // ============================================================================
+// SYSTEM Tab UI Elements & Sound Toggle
+// ============================================================================
+
+static lv_obj_t *ui_label_system_version = NULL;
+static lv_obj_t *ui_label_system_build = NULL;
+static lv_obj_t *ui_switch_sound = NULL;
+
+// Sound toggle callback
+static void sound_toggle_cb(lv_event_t *e) {
+    lv_obj_t *sw = lv_event_get_target(e);
+    bool enabled = lv_obj_has_state(sw, LV_STATE_CHECKED);
+    ui_theme_set_sound_enabled(enabled);
+    Serial.printf("Sound effects %s\n", enabled ? "enabled" : "disabled");
+}
+
+// ============================================================================
 // Tab Change Callback
 // ============================================================================
 
@@ -186,27 +202,28 @@ void ui_tabs_create_status(lv_obj_t *parent) {
     ui_theme_apply_container(left_container);
     lv_obj_clear_flag(left_container, LV_OBJ_FLAG_SCROLLABLE);
     
-    // Time display (large)
+    // Time display (show uptime)
     ui_label_status_time = lv_label_create(left_container);
-    lv_label_set_text(ui_label_status_time, "12:00 PM");
+    lv_label_set_text(ui_label_status_time, "00:00:00");
     lv_obj_set_style_text_color(ui_label_status_time, PIPBOY_GREEN_BRIGHT, 0);
     lv_obj_set_style_text_font(ui_label_status_time, &lv_font_montserrat_16, 0);
     lv_obj_align(ui_label_status_time, LV_ALIGN_TOP_MID, 0, 3);
     
-    // Date display
+    // Date display (system status)
     ui_label_status_date = lv_label_create(left_container);
-    lv_label_set_text(ui_label_status_date, "Mon, Jan 28, 2026");
+    lv_label_set_text(ui_label_status_date, "SYSTEM READY");
     ui_theme_apply_label_normal(ui_label_status_date);
     lv_obj_align(ui_label_status_date, LV_ALIGN_TOP_MID, 0, 26);
     
-    // Weather section
+    // CPU Info
     ui_label_status_weather = lv_label_create(left_container);
-    lv_label_set_text(ui_label_status_weather, "Weather: --");
+    lv_label_set_text(ui_label_status_weather, "CPU: 240 MHz");
     ui_theme_apply_label_small(ui_label_status_weather);
     lv_obj_align(ui_label_status_weather, LV_ALIGN_TOP_LEFT, 3, 48);
     
+    // Memory Info
     ui_label_status_temp = lv_label_create(left_container);
-    lv_label_set_text(ui_label_status_temp, "Temp: --°C");
+    lv_label_set_text(ui_label_status_temp, "RAM: --KB");
     ui_theme_apply_label_small(ui_label_status_temp);
     lv_obj_align(ui_label_status_temp, LV_ALIGN_TOP_LEFT, 3, 62);
     
@@ -406,23 +423,110 @@ void ui_tabs_create_radio(lv_obj_t *parent) {
 }
 
 // ============================================================================
-// SYSTEM Tab Creation - Settings and Configuration
+// SYSTEM Tab Creation - Firmware and Device Information
 // ============================================================================
 
 void ui_tabs_create_system(lv_obj_t *parent) {
     if (!parent) return;
     
-    // Use the existing ui_settings module
-    ui_settings_init(parent);
+    // Title
+    lv_obj_t *title = lv_label_create(parent);
+    lv_label_set_text(title, "SYSTEM INFO");
+    ui_theme_apply_label_title(title);
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_14, 0);
+    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 1);
+    
+    // Sound toggle
+    lv_obj_t *sound_label = lv_label_create(parent);
+    lv_label_set_text(sound_label, "SOUND:");
+    ui_theme_apply_label_normal(sound_label);
+    lv_obj_align(sound_label, LV_ALIGN_TOP_RIGHT, -50, 1);
+    
+    ui_switch_sound = lv_switch_create(parent);
+    lv_obj_set_size(ui_switch_sound, 35, 18);
+    lv_obj_align(ui_switch_sound, LV_ALIGN_TOP_RIGHT, -5, 1);
+    lv_obj_add_state(ui_switch_sound, LV_STATE_CHECKED);
+    lv_obj_add_event_cb(ui_switch_sound, sound_toggle_cb, LV_EVENT_VALUE_CHANGED, NULL);
+    lv_obj_set_style_bg_color(ui_switch_sound, PIPBOY_GREEN, LV_PART_INDICATOR | LV_STATE_CHECKED);
+    
+    // Firmware Version
+    lv_obj_t *fw_label = lv_label_create(parent);
+    lv_label_set_text(fw_label, "FIRMWARE:");
+    ui_theme_apply_label_normal(fw_label);
+    lv_obj_align(fw_label, LV_ALIGN_TOP_LEFT, 3, 25);
+    
+    ui_label_system_version = lv_label_create(parent);
+    lv_label_set_text(ui_label_system_version, "v" FIRMWARE_VERSION);
+    ui_theme_apply_label_small(ui_label_system_version);
+    lv_obj_set_style_text_color(ui_label_system_version, PIPBOY_GREEN_BRIGHT, 0);
+    lv_obj_align(ui_label_system_version, LV_ALIGN_TOP_LEFT, 75, 25);
+    
+    // Build Date
+    lv_obj_t *build_label = lv_label_create(parent);
+    lv_label_set_text(build_label, "BUILD:");
+    ui_theme_apply_label_normal(build_label);
+    lv_obj_align(build_label, LV_ALIGN_TOP_LEFT, 3, 40);
+    
+    ui_label_system_build = lv_label_create(parent);
+    lv_label_set_text(ui_label_system_build, BUILD_DATE);
+    ui_theme_apply_label_small(ui_label_system_build);
+    lv_obj_align(ui_label_system_build, LV_ALIGN_TOP_LEFT, 75, 40);
+    
+    // Device Model
+    lv_obj_t *model_label = lv_label_create(parent);
+    lv_label_set_text(model_label, "DEVICE:");
+    ui_theme_apply_label_normal(model_label);
+    lv_obj_align(model_label, LV_ALIGN_TOP_LEFT, 3, 55);
+    
+    lv_obj_t *model_value = lv_label_create(parent);
+    lv_label_set_text(model_value, "Cardputer ADV");
+    ui_theme_apply_label_small(model_value);
+    lv_obj_align(model_value, LV_ALIGN_TOP_LEFT, 75, 55);
+    
+    // Chip Model
+    lv_obj_t *chip_label = lv_label_create(parent);
+    lv_label_set_text(chip_label, "CHIP:");
+    ui_theme_apply_label_normal(chip_label);
+    lv_obj_align(chip_label, LV_ALIGN_TOP_LEFT, 3, 70);
+    
+    lv_obj_t *chip_value = lv_label_create(parent);
+    lv_label_set_text(chip_value, "ESP32-S3 240MHz");
+    ui_theme_apply_label_small(chip_value);
+    lv_obj_align(chip_value, LV_ALIGN_TOP_LEFT, 75, 70);
+    
+    // Flash Size
+    lv_obj_t *flash_label = lv_label_create(parent);
+    lv_label_set_text(flash_label, "FLASH:");
+    ui_theme_apply_label_normal(flash_label);
+    lv_obj_align(flash_label, LV_ALIGN_TOP_LEFT, 3, 85);
+    
+    lv_obj_t *flash_value = lv_label_create(parent);
+    lv_label_set_text(flash_value, "16MB");
+    ui_theme_apply_label_small(flash_value);
+    lv_obj_align(flash_value, LV_ALIGN_TOP_LEFT, 75, 85);
+    
+    // Features list
+    lv_obj_t *features = lv_label_create(parent);
+    lv_label_set_text(features, "FEATURES:\nLoRa SX1262 | IMU QMI8658\nSD Card | NeoPixel LED\nSpeaker | Keyboard");
+    ui_theme_apply_label_small(features);
+    lv_obj_set_style_text_color(features, PIPBOY_GREEN_DARK, 0);
+    lv_obj_align(features, LV_ALIGN_BOTTOM_LEFT, 3, -2);
 }
 
 // ============================================================================
-// Tab Switching Functions
+// Tab Switching Functions - Enhanced with sound effects
 // ============================================================================
 
 void ui_tabs_switch_to(TabIndex index) {
     if (ui_tabview_main && index >= 0 && index < TAB_COUNT) {
+        TabIndex old_index = ui_tabs_get_active();
         lv_tabview_set_act(ui_tabview_main, index, LV_ANIM_ON);
+        
+        // Play tab change sound effect
+        if (old_index != index) {
+            ui_theme_play_tab_change();
+        }
+        
         Serial.printf("Tab switched to: %d\n", index);
     }
 }
@@ -443,27 +547,26 @@ void ui_tabs_set_change_callback(void (*callback)(TabIndex old_tab, TabIndex new
 // ============================================================================
 
 void ui_tabs_update_time(const char *time_str) {
-    if (ui_label_status_time) {
+    // STATUS tab shows uptime, update it
+    if (ui_label_status_time && time_str) {
         lv_label_set_text(ui_label_status_time, time_str);
     }
 }
 
 void ui_tabs_update_date(const char *date_str) {
-    if (ui_label_status_date) {
+    if (ui_label_status_date && date_str) {
         lv_label_set_text(ui_label_status_date, date_str);
     }
 }
 
 void ui_tabs_update_weather(const char *weather_str, const char *temp_str) {
-    if (ui_label_status_weather) {
-        char buf[64];
-        snprintf(buf, sizeof(buf), "Weather: %s", weather_str);
-        lv_label_set_text(ui_label_status_weather, buf);
+    // Repurpose for CPU frequency
+    if (ui_label_status_weather && weather_str) {
+        lv_label_set_text(ui_label_status_weather, weather_str);
     }
-    if (ui_label_status_temp) {
-        char buf[32];
-        snprintf(buf, sizeof(buf), "Temp: %s", temp_str);
-        lv_label_set_text(ui_label_status_temp, buf);
+    // Repurpose for memory info
+    if (ui_label_status_temp && temp_str) {
+        lv_label_set_text(ui_label_status_temp, temp_str);
     }
 }
 

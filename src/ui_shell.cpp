@@ -53,9 +53,17 @@ void ui_shell_init() {
     ui_tabs_init(ui_screen_main);
     Serial.println("  ✓ Tab system initialized");
     
-    // Step 5: Load and display the screen
+    // Step 5: Apply CRT effects (scanlines and vignette)
+    ui_theme_apply_crt_effects(ui_screen_main);
+    Serial.println("  ✓ CRT effects applied");
+    
+    // Step 6: Load and display the screen
     lv_scr_load(ui_screen_main);
     Serial.println("  ✓ UI loaded to display");
+    
+    // Step 7: Show boot animation
+    ui_theme_create_boot_animation(ui_screen_main);
+    Serial.println("  ✓ Boot animation started");
     
     Serial.println("UI Shell: Ready");
 }

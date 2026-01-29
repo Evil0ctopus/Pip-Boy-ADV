@@ -1,0 +1,4 @@
+# Pip-Boy Icon Placeholder
+# This is a placeholder file. Replace with a 64x64 PNG icon.
+# The icon should feature Pip-Boy green (#00FF00) on black background.
+# Use any image editor to create a proper icon.png file.

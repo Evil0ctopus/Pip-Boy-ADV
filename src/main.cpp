@@ -165,6 +165,20 @@ void systemStatsTask(void *pvParameters) {
         
         // WiFi status update removed for standalone operation
         
+        // Update STATUS tab with uptime and memory
+        uint32_t uptime = systemStats.getUptime();
+        uint32_t hours = (uptime % 86400) / 3600;
+        uint32_t minutes = (uptime % 3600) / 60;
+        uint32_t secs = uptime % 60;
+        char timeStr[16];
+        snprintf(timeStr, sizeof(timeStr), "%02lu:%02lu:%02lu", hours, minutes, secs);
+        ui_shell_update_time(timeStr);
+        
+        char memStr[32];
+        uint32_t freeHeap = systemStats.getFreeHeap();
+        snprintf(memStr, sizeof(memStr), "RAM: %luKB", freeHeap / 1024);
+        ui_shell_update_weather("CPU: 240 MHz", memStr);
+        
         // Update DATA tab information
         ui_shell_update_cpu(systemStats.getCPUFreqMHz());
         ui_shell_update_memory(systemStats.getFreeHeap(), 320000);
