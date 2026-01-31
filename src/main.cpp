@@ -417,7 +417,7 @@ void setup() {
     Serial.println("  ✓ Display hardware initialized");
     
     // Ensure correct color byte order and disable inversion
-    M5.Display.setSwapBytes(true);
+    M5.Display.setSwapBytes(false);
     M5.Display.invertDisplay(false);
     Serial.println("  ✓ Display color order and inversion configured");
     
