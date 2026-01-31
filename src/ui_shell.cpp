@@ -6,24 +6,14 @@
 // ============================================================================
 
 #include "ui_shell.h"
-#include "ui_theme.h"
-#include "ui_statusbar.h"
-#include "ui_tabs.h"
-#include "ui_animations.h"
-#include "HardwareConfig.h"
 #include <Arduino.h>
+#include "ui.h"
 
 // ============================================================================
 // Global UI Objects
 // ============================================================================
 
 static lv_obj_t *ui_screen_main = NULL;
-
-// Tab-specific data objects (for DATA tab updates)
-static lv_obj_t *ui_label_data_cpu = NULL;
-static lv_obj_t *ui_label_data_memory = NULL;
-static lv_obj_t *ui_label_data_psram = NULL;
-static lv_obj_t *ui_label_data_uptime = NULL;
 
 // ============================================================================
 // UI Shell Initialization
@@ -34,39 +24,21 @@ static lv_obj_t *ui_label_data_uptime = NULL;
  * Call this once during firmware boot
  */
 void ui_shell_init() {
-    Serial.println("UI Shell: Initializing...");
-    
-    // Step 1: Initialize Pip-Boy theme
-    ui_theme_init();
-    Serial.println("  ✓ Theme initialized");
-    
-    // Step 2: Create main screen container
-    ui_screen_main = lv_obj_create(NULL);
-    ui_theme_apply_screen(ui_screen_main);
-    Serial.println("  ✓ Main screen created");
-    
-    // Step 3: Initialize status bar (top of screen)
-    ui_statusbar_init(ui_screen_main);
-    Serial.println("  ✓ Status bar initialized");
-    
-    // Step 4: Initialize tab system (below status bar)
-    ui_tabs_init(ui_screen_main);
-    Serial.println("  ✓ Tab system initialized");
-    
-    // Step 5: Apply CRT effects (scanlines and vignette)
-    ui_theme_apply_crt_effects(ui_screen_main);
-    Serial.println("  ✓ CRT effects applied");
-    
-    // Step 6: Load and display the screen
-    lv_scr_load(ui_screen_main);
-    Serial.println("  ✓ UI loaded to display");
-    
-    // Step 7: Boot animation temporarily disabled for initial testing
-    // TODO: Re-enable after confirming UI displays correctly
-    // ui_theme_create_boot_animation(ui_screen_main);
-    Serial.println("  ○ Boot animation disabled (testing mode)");
-    
-    Serial.println("UI Shell: Ready");
+    Serial.println("UI Shell: Initializing (Pip-Boy Weather UI)...");
+
+    // Initialize the SquareLine UI from Pip-Boy Weather Clock
+    ui_init();
+    ui_screen_main = ui_Screen1;
+
+    // Start built-in animations from the reference UI
+    if (ui_Img_stat) {
+        walking_Animation(ui_Img_stat, 0);
+    }
+    if (ui_Img_data) {
+        thumpsup_Animation(ui_Img_data, 0);
+    }
+
+    Serial.println("UI Shell: Ready (Pip-Boy Weather UI loaded)");
 }
 
 /**
@@ -91,12 +63,15 @@ void ui_shell_deinit() {
 // ============================================================================
 
 void ui_shell_update_time(const char *time_str) {
-    ui_statusbar_update_time(time_str);
-    ui_tabs_update_time(time_str);
+    if (ui_Label_Time) {
+        lv_label_set_text(ui_Label_Time, time_str ? time_str : "--:--");
+    }
 }
 
 void ui_shell_update_date(const char *date_str) {
-    ui_tabs_update_date(date_str);
+    if (ui_Label_date) {
+        lv_label_set_text(ui_Label_date, date_str ? date_str : "DATE");
+    }
 }
 
 // ============================================================================
@@ -104,7 +79,12 @@ void ui_shell_update_date(const char *date_str) {
 // ============================================================================
 
 void ui_shell_update_weather(const char *weather, const char *temp) {
-    ui_tabs_update_weather(weather, temp);
+    if (ui_Label_temp) {
+        lv_label_set_text(ui_Label_temp, weather ? weather : "T:--");
+    }
+    if (ui_Label_hum) {
+        lv_label_set_text(ui_Label_hum, temp ? temp : "H:--");
+    }
 }
 
 // ============================================================================
@@ -112,16 +92,20 @@ void ui_shell_update_weather(const char *weather, const char *temp) {
 // ============================================================================
 
 void ui_shell_update_battery(int percentage, bool charging) {
-    ui_statusbar_update_battery(percentage, charging);
-    ui_tabs_update_battery(percentage);
+    (void)charging;
+    if (ui_Bar_battery) {
+        lv_bar_set_value(ui_Bar_battery, percentage, LV_ANIM_OFF);
+    }
 }
 
 void ui_shell_update_wifi(bool connected, int rssi) {
-    ui_statusbar_update_wifi(connected, rssi);
+    (void)connected;
+    (void)rssi;
 }
 
 void ui_shell_update_lora(bool active, float rssi) {
-    ui_statusbar_update_lora(active, rssi);
+    (void)active;
+    (void)rssi;
 }
 
 // ============================================================================
@@ -129,19 +113,38 @@ void ui_shell_update_lora(bool active, float rssi) {
 // ============================================================================
 
 void ui_shell_update_cpu(uint8_t freq_mhz) {
-    ui_tabs_update_cpu_freq(freq_mhz);
+    if (ui_Labe2) {
+        char buf[8];
+        snprintf(buf, sizeof(buf), "%u", freq_mhz);
+        lv_label_set_text(ui_Labe2, buf);
+    }
 }
 
 void ui_shell_update_memory(uint32_t free_heap, uint32_t total_heap) {
-    ui_tabs_update_memory(free_heap, total_heap);
+    if (total_heap == 0) return;
+    uint32_t used = total_heap - free_heap;
+    uint32_t percent = (used * 100U) / total_heap;
+    if (ui_Bar_FL) {
+        lv_bar_set_value(ui_Bar_FL, percent, LV_ANIM_OFF);
+    }
+    if (ui_Labe5) {
+        char buf[8];
+        snprintf(buf, sizeof(buf), "%lu", (unsigned long)percent);
+        lv_label_set_text(ui_Labe5, buf);
+    }
 }
 
 void ui_shell_update_psram(uint32_t free_psram, uint32_t total_psram) {
-    ui_tabs_update_psram(free_psram, total_psram);
+    if (total_psram == 0) return;
+    uint32_t used = total_psram - free_psram;
+    uint32_t percent = (used * 100U) / total_psram;
+    if (ui_Bar_HI) {
+        lv_bar_set_value(ui_Bar_HI, percent, LV_ANIM_OFF);
+    }
 }
 
 void ui_shell_update_uptime(uint32_t seconds) {
-    ui_tabs_update_uptime(seconds);
+    (void)seconds;
 }
 
 // ============================================================================
@@ -149,11 +152,14 @@ void ui_shell_update_uptime(uint32_t seconds) {
 // ============================================================================
 
 void ui_shell_play_animation(int animation_type) {
-    ui_animation_play(static_cast<AnimationType>(animation_type));
+    (void)animation_type;
+    if (ui_Img_stat) {
+        walking_Animation(ui_Img_stat, 0);
+    }
 }
 
 void ui_shell_stop_animation() {
-    ui_animation_stop();
+    // No-op: SquareLine animations loop internally
 }
 
 // ============================================================================
@@ -161,13 +167,14 @@ void ui_shell_stop_animation() {
 // ============================================================================
 
 void ui_shell_switch_tab(int tab_index) {
-    if (tab_index >= 0 && tab_index < TAB_COUNT) {
-        ui_tabs_switch_to(static_cast<TabIndex>(tab_index));
+    if (ui_Tab_main && tab_index >= 0 && tab_index <= 1) {
+        lv_tabview_set_act(ui_Tab_main, tab_index, LV_ANIM_ON);
     }
 }
 
 int ui_shell_get_active_tab() {
-    return static_cast<int>(ui_tabs_get_active());
+    if (!ui_Tab_main) return 0;
+    return lv_tabview_get_tab_act(ui_Tab_main);
 }
 
 // ============================================================================
@@ -179,6 +186,6 @@ lv_obj_t* ui_shell_get_screen() {
 }
 
 lv_obj_t* ui_shell_get_animation_container() {
-    return ui_animation_container;
+    return ui_Img_stat;
 }
 
