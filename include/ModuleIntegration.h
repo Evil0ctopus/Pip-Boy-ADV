@@ -14,7 +14,7 @@
 #include "GPSHelper.h"
 #include "FileBrowser.h"
 #include "TerminalHelper.h"
-#include "WiFiManager.h"
+#include "ProjectConfig.h"
 #include "MapRenderer.h"
 #include "PluginSystem.h"
 #include "LoRaHelper.h"

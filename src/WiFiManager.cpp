@@ -1,5 +1,8 @@
 // WiFiManager.cpp - Wi-Fi Management Implementation
 #include "WiFiManager.h"
+
+#if !defined(DISABLE_WIFI)
+
 #include <WiFi.h>
 #include <esp_ping.h>
 #include <time.h>
@@ -197,3 +200,5 @@ String WiFiManager::encryptionTypeStr(wifi_auth_mode_t type) {
         default: return "Unknown";
     }
 }
+
+#endif // !DISABLE_WIFI

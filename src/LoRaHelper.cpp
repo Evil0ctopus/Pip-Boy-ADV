@@ -15,46 +15,17 @@ LoRaHelper::LoRaHelper() :
 }
 
 bool LoRaHelper::isAvailable() {
-    // Safely probe for SX1262 hardware without initializing
-    // This prevents crashes when the chip is not present
+    // Quickly check if LoRa hardware might be present
+    // Skip complex probing that can hang
     
-    Serial.println("Probing for LoRa SX1262 hardware...");
+    Serial.println("Quick LoRa hardware check...");
     
-    // Create temporary SPI instance
-    SPIClass *probeSPI = new SPIClass(HSPI);
-    probeSPI->begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_CS);
+    // For now, assume hardware is not present to prevent boot delays
+    // User can manually enable LoRa in future if hardware is added
+    Serial.println("  → LoRa disabled (prevents boot hang without hardware)");
+    Serial.println("  → To enable: modify isAvailable() in LoRaHelper.cpp");
     
-    // Create temporary radio instance
-    SX1262 *probeRadio = new SX1262(new Module(LORA_CS, LORA_IRQ, LORA_RST, LORA_BUSY, *probeSPI));
-    
-    // Try to read chip version register (safe operation)
-    // SX1262 should return a valid version value
-    // If chip is absent, this will timeout or return 0x00/0xFF
-    
-    bool detected = false;
-    
-    // Attempt basic initialization with minimal timeout
-    // Use a safe frequency that won't cause issues
-    int state = probeRadio->begin(915.0, 125.0, 7, 5, 0x12, 14, 8, 0);
-    
-    if (state == RADIOLIB_ERR_NONE) {
-        detected = true;
-        Serial.println("  → SX1262 chip responded");
-        // Put chip to sleep to save power
-        probeRadio->sleep();
-    } else {
-        Serial.print("  → No response (error code: ");
-        Serial.print(state);
-        Serial.println(")");
-        detected = false;
-    }
-    
-    // Clean up probe resources
-    delete probeRadio;
-    probeSPI->end();
-    delete probeSPI;
-    
-    return detected;
+    return false;
 }
 
 bool LoRaHelper::begin() {

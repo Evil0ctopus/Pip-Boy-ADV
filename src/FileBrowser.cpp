@@ -1,10 +1,11 @@
 // FileBrowser.cpp - SD Card File Browser Implementation
 #include "FileBrowser.h"
+#include "SDHelper.h"
 
 FileBrowser::FileBrowser() : currentPath("/"), initialized(false) {}
 
 bool FileBrowser::begin() {
-    if (!SD.begin()) {
+    if (!SDHelper::isReady()) {
         Serial.println("FileBrowser: SD card initialization failed");
         return false;
     }

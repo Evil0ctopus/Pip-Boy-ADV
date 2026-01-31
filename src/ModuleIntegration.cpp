@@ -1,12 +1,15 @@
 #include "ModuleIntegration.h"
 #include "ui_shell.h"
+#include "SDHelper.h"
 
 // External module instances (defined in main.cpp)
 extern IRHelper irHelper;
 extern GPSHelper gpsHelper;
 extern FileBrowser fileBrowser;
 extern TerminalHelper terminalHelper;
+#if !defined(DISABLE_WIFI)
 extern WiFiManager wifiManager;
+#endif
 extern MapRenderer mapRenderer;
 extern PluginSystem pluginSystem;
 extern LoRaHelper loraHelper;
@@ -96,16 +99,18 @@ void ModuleIntegration::onIRTransmit(const char* signalName) {
 
 void ModuleIntegration::onWiFiScan() {
     if (!_status.wifi_available) return;
-    
+#if !defined(DISABLE_WIFI)
     Serial.println("[ModuleIntegration] Starting WiFi scan...");
     wifiManager.startScan();
+#endif
 }
 
 void ModuleIntegration::onWiFiConnect(const char* ssid, const char* password) {
     if (!_status.wifi_available) return;
-    
+#if !defined(DISABLE_WIFI)
     Serial.printf("[ModuleIntegration] Connecting to WiFi: %s\n", ssid);
     wifiManager.connect(ssid, password);
+#endif
 }
 
 void ModuleIntegration::onMapZoom(int delta) {
@@ -202,8 +207,12 @@ void ModuleIntegration::_checkModuleStatus() {
     _status.ir_available = irHelper.isAvailable();
     _status.gps_available = gpsHelper.isAvailable();
     _status.lora_available = loraHelper.isInitialized();
+#if defined(DISABLE_WIFI)
+    _status.wifi_available = false;
+#else
     _status.wifi_available = true;  // WiFi always available on ESP32-S3
-    _status.sd_available = true;  // Check SD.begin() status
+#endif
+    _status.sd_available = SDHelper::isReady();
     _status.map_available = true;   // Map renderer always available
     _status.plugins_available = true;  // Always available
     _status.terminal_available = true; // Terminal always available

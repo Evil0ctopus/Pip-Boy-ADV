@@ -2,7 +2,30 @@
 
 ## Overview
 
-The Pip-Boy ADV firmware now supports automated **Build + Upload + Monitor** workflow via USB. This guide explains how to configure and use USB deployment.
+The Pip-Boy ADV firmware supports **fully automated Build + Upload + Monitor** workflow with COM port auto-detection. Press **Ctrl+Shift+B** and the system handles everything!
+
+---
+
+## Quick Start
+
+### Automated Workflow (Recommended)
+Press **Ctrl+Shift+B** to automatically:
+1. 🔍 **Detect COM port** (scans PlatformIO + Device Manager)
+2. 🔨 **Build firmware** (787.2 KB)
+3. 📤 **Upload** to device (1.5 Mbps)
+4. 📟 **Open serial monitor** (115200 baud)
+
+No manual configuration needed! The `detect_port.ps1` script automatically finds your device.
+
+### Individual Tasks
+
+Run via **Terminal → Run Task** or **Ctrl+Shift+P → Tasks: Run Task**:
+
+- **Detect COM Port** - Scans for device and updates `platformio.ini`
+- **Build Only** - Compile firmware without uploading
+- **Upload Only** - Upload pre-built firmware
+- **Monitor Only** - Open serial monitor (auto-detects port)
+- **Build & Package OTA** - Create M5 Launcher package
 
 ---
 
@@ -10,7 +33,7 @@ The Pip-Boy ADV firmware now supports automated **Build + Upload + Monitor** wor
 
 ### 1. Hardware Setup
 - **M5Stack Cardputer ADV** connected via USB-C cable
-- Ensure cable supports data transfer (not charging-only)
+- Ensure cable supports **data transfer** (not charging-only)
 - Device should be powered on
 
 ### 2. Software Requirements
@@ -166,13 +189,73 @@ pio run --target upload --target monitor
 
 ## Troubleshooting
 
+### Problem: "Available ports: ... Enter port index:" (Manual Port Prompt)
+
+**Cause**: Serial monitor can't auto-detect COM port
+
+**Status**: ✅ **FIXED** - Auto-detection script integrated into tasks
+
+**How It Works Now**:
+1. Press **Ctrl+Shift+B**
+2. Script runs `detect_port.ps1` automatically
+3. Scans PlatformIO device list → Device Manager → Available ports
+4. Updates `platformio.ini` with detected port
+5. Sets `$env:PLATFORMIO_UPLOAD_PORT` environment variable
+6. Monitor uses detected port automatically
+
+**If Still Prompting**:
+```powershell
+# Manually run detection script
+.\detect_port.ps1
+
+# Then try monitor
+pio device monitor
+```
+
+---
+
+### Problem: "could not open port 'COMx': FileNotFoundError"
+
+**Cause**: Port locked by another program or device disconnected during upload
+
+**Status**: ✅ **FIXED** - Tasks now wait 3 seconds after upload before opening monitor
+
+**Solutions**:
+1. **Close Conflicting Programs**
+   - Arduino IDE serial monitor
+   - PuTTY or other terminal programs
+   - Previous monitor instances
+   - Device Manager (if port properties open)
+
+2. **Unplug and Reconnect**
+   - Close all serial monitors
+   - Unplug USB cable
+   - Wait 5 seconds
+   - Reconnect and run `.\detect_port.ps1`
+
+3. **Increase Wait Time** (if device takes longer to reset)
+   Edit [.vscode/tasks.json](.vscode/tasks.json):
+   ```json
+   "Start-Sleep -Seconds 3"  // Change to 5 or 6
+   ```
+
+---
+
 ### Problem: "Please specify upload_port"
 
 **Cause**: PlatformIO cannot detect the device
 
+**Status**: ✅ **MITIGATED** - Auto-detection script handles this
+
 **Solutions**:
-1. **Check USB Connection**
-   - Try different USB cable
+1. **Run Auto-Detection**
+   ```powershell
+   .\detect_port.ps1
+   ```
+   This scans multiple detection methods and updates platformio.ini.
+
+2. **Check USB Connection**
+   - Try different USB cable (must support data, not charging-only)
    - Try different USB port on computer
    - Ensure device is powered on
 

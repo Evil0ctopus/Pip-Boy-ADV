@@ -3,6 +3,10 @@
 #ifndef WIFI_MANAGER_H
 #define WIFI_MANAGER_H
 
+#if defined(DISABLE_WIFI)
+#include "WiFiManagerDisabled.h"
+#else
+
 #include <Arduino.h>
 #include <WiFi.h>
 #include <vector>
@@ -59,5 +63,7 @@ private:
     
     String encryptionTypeStr(wifi_auth_mode_t type);
 };
+
+#endif // DISABLE_WIFI
 
 #endif // WIFI_MANAGER_H

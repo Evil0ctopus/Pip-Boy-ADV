@@ -16,6 +16,9 @@
 // ============================================================================
 
 #include "HardwareConfig.h"  // Hardware pin definitions for Cardputer ADV
+#include "ProjectConfig.h"   // Feature flags for WiFi/Weather/Config
+#include "SDHelper.h"        // Centralized SD initialization
+#include "LvglLock.h"        // LVGL mutex
 
 // UI System - Modular interface components
 #include "ui_shell.h"        // Main UI shell/container
@@ -41,7 +44,7 @@
 #include "GPSHelper.h"       // GPS module (NEO-6M/NEO-M8N)
 #include "FileBrowser.h"     // SD card file browser
 #include "TerminalHelper.h"  // Shell terminal
-#include "WiFiManager.h"     // Wi-Fi management
+#include "WiFiManager.h"     // Wi-Fi management (stubbed when disabled)
 #include "MapRenderer.h"     // Map rendering
 #include "PluginSystem.h"    // Plugin loader
 
@@ -101,9 +104,18 @@ void lvgl_display_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color
     uint32_t w = area->x2 - area->x1 + 1;
     uint32_t h = area->y2 - area->y1 + 1;
 
+    // Ensure display is awake during write
+    M5.Display.wakeup();
+    
     M5.Display.startWrite();
     M5.Display.setAddrWindow(area->x1, area->y1, w, h);
-    M5.Display.pushColors((uint16_t *)&color_p->full, w * h, true);
+    
+    // Write pixels with proper color format handling
+    uint16_t *pixels = (uint16_t *)color_p;
+    for (uint32_t i = 0; i < w * h; i++) {
+        M5.Display.writeData(pixels[i]);
+    }
+    
     M5.Display.endWrite();
 
     lv_disp_flush_ready(disp_drv);
@@ -117,6 +129,7 @@ void lvgl_setup() {
     
     // Initialize LVGL core
     lv_init();
+    lvgl_lock_init();
     Serial.println("  ✓ LVGL core initialized (v8.4.0)");
 
     // Initialize display buffer with double buffering
@@ -165,8 +178,8 @@ bool initializeSDCard() {
     
     // Configure HSPI for SD card
     hspi->begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
-    
-    if (!SD.begin(SD_CS, *hspi, SD_SPI_FREQ)) {
+
+    if (!SDHelper::begin(SD_CS, *hspi, SD_SPI_FREQ)) {
         Serial.println("✗ SD card initialization failed");
         return false;
     }
@@ -194,6 +207,7 @@ void systemStatsTask(void *pvParameters) {
         // Update battery UI
         int batteryLevel = systemStats.getBatteryLevel();
         bool charging = systemStats.isCharging();
+        lvgl_lock();
         ui_shell_update_battery(batteryLevel, charging);
         
         // WiFi status update removed for standalone operation
@@ -217,6 +231,7 @@ void systemStatsTask(void *pvParameters) {
         ui_shell_update_memory(systemStats.getFreeHeap(), 320000);
         ui_shell_update_psram(systemStats.getPSRAMFree(), systemStats.getPSRAMSize());
         ui_shell_update_uptime(systemStats.getUptime());
+        lvgl_unlock();
         
         // Print detailed stats every minute
         static unsigned long lastPrint = 0;
@@ -249,6 +264,7 @@ void loraReceiveTask(void *pvParameters) {
                 msg[len] = '\0';
                 
                 // Update radio UI
+                lvgl_lock();
                 ui_radio_add_message(msg, false);
                 ui_radio_update_rssi(packet.rssi);
                 ui_radio_update_snr(packet.snr);
@@ -259,6 +275,7 @@ void loraReceiveTask(void *pvParameters) {
                 
                 // Update status bar
                 ui_shell_update_lora(true, packet.rssi);
+                lvgl_unlock();
                 
                 // Play notification sound
                 audio.playEffect(SFX_NOTIFICATION);
@@ -287,13 +304,17 @@ void sensorMonitorTask(void *pvParameters) {
             // Detect shake gesture to toggle animation
             if (sensors.detectShake()) {
                 if (walkingAnimActive) {
+                    lvgl_lock();
                     ui_animation_stop();
                     ui_animation_play(ANIM_THUMBSUP);
+                    lvgl_unlock();
                     walkingAnimActive = false;
                     audio.playEffect(SFX_NONE);
                 } else {
+                    lvgl_lock();
                     ui_animation_stop();
                     ui_animation_play(ANIM_WALKING);
+                    lvgl_unlock();
                     walkingAnimActive = true;
                     audio.playBeep(2000, 100);
                 }
@@ -321,6 +342,13 @@ void sensorMonitorTask(void *pvParameters) {
  */
 void handleInput() {
     M5.update();
+    
+    // Debug button state every second
+    static unsigned long lastDebug = 0;
+    if (millis() - lastDebug >= 1000) {
+        Serial.printf("[BTN] A=%d B=%d C=%d\n", M5.BtnA.isPressed(), M5.BtnB.isPressed(), M5.BtnC.isPressed());
+        lastDebug = millis();
+    }
     
     // Button A: Toggle Animation
     if (M5.BtnA.wasPressed()) {
@@ -395,6 +423,7 @@ void setup() {
     Serial.println("  ✓ Display rotation set to landscape");
     
     M5.Display.setBrightness(currentBrightness);
+    M5.Display.wakeup();
     Serial.println("  ✓ Display brightness configured");
     
     // Draw test pattern to verify display is working
@@ -425,7 +454,7 @@ void setup() {
     
     // Force LVGL to render immediately
     lv_timer_handler();
-    lv_refr_now(NULL);
+    lv_task_handler();
     Serial.println("  ✓ Screen refreshed");
     
     Serial.println("✓ UI shell loaded and displayed");
@@ -470,34 +499,9 @@ void setup() {
         Serial.println("○ GPS Helper not available (optional)");
     }
     
-    // Initialize File Browser
-    if (fileBrowser.begin()) {
-        Serial.println("✓ File Browser initialized");
-    } else {
-        Serial.println("○ File Browser unavailable");
-    }
-    
     // Initialize Map Renderer
     mapRenderer.begin();
     Serial.println("✓ Map Renderer initialized");
-    
-    // Initialize Plugin System
-    if (pluginSystem.begin()) {
-        Serial.println("✓ Plugin System initialized");
-    } else {
-        Serial.println("○ Plugin System unavailable");
-    }
-    
-    // Initialize LoRa Helper (optional)
-    if (loraHelper.begin()) {
-        Serial.println("✓ LoRa Helper available");
-    } else {
-        Serial.println("○ LoRa Helper not available (optional)");
-    }
-    
-    // Initialize Module Integration Layer
-    modules.init();
-    Serial.println("✓ Module integration layer initialized");
     
     Serial.println("○ WiFi disabled (enable in SYSTEM tab)");
 
@@ -507,7 +511,9 @@ void setup() {
     Serial.println("\n=== Stage 4: SD Card & Configuration ===");
     
     if (!initializeSDCard()) {
+        lvgl_lock();
         ui_shell_update_date("NO SD CARD");
+        lvgl_unlock();
         Serial.println("⚠ Continuing without SD card...");
     } else {
         Serial.println("✓ SD card detected");
@@ -516,7 +522,25 @@ void setup() {
         if (ui_assets_init()) {
             Serial.println("✓ Asset system initialized");
         }
+
+        // Initialize File Browser (SD dependent)
+        if (fileBrowser.begin()) {
+            Serial.println("✓ File Browser initialized");
+        } else {
+            Serial.println("○ File Browser unavailable");
+        }
+
+        // Initialize Plugin System (SD dependent)
+        if (pluginSystem.begin()) {
+            Serial.println("✓ Plugin System initialized");
+        } else {
+            Serial.println("○ Plugin System unavailable");
+        }
     }
+
+    // Initialize Module Integration Layer (after SD availability known)
+    modules.init();
+    Serial.println("✓ Module integration layer initialized");
 
     // ========================================================================
     // Stage 5: Sensor Initialization
@@ -552,9 +576,11 @@ void setup() {
         
         if (loraHelper.begin()) {
             Serial.printf("✓ LoRa initialized @ %.1f MHz\n", LORA_DEFAULT_FREQ);
+            lvgl_lock();
             ui_radio_update_status(true, true);
             ui_radio_update_frequency(LORA_DEFAULT_FREQ);
             ui_shell_update_lora(true, 0);
+            lvgl_unlock();
             
             // Start LoRa receive task
             xTaskCreatePinnedToCore(
@@ -568,14 +594,18 @@ void setup() {
             );
         } else {
             Serial.println("⚠ LoRa initialization failed - check configuration");
+            lvgl_lock();
             ui_radio_update_status(false, false);
             ui_radio_add_message("LoRa init failed - Check config", false);
+            lvgl_unlock();
         }
     } else {
         Serial.println("⊘ LoRa hardware not detected - skipping");
         Serial.println("  (This is normal if SX1262 hat is not installed)");
+        lvgl_lock();
         ui_radio_update_status(false, false);
         ui_radio_add_message("No LoRa hardware detected", false);
+        lvgl_unlock();
     }
 
     // ========================================================================
@@ -612,9 +642,11 @@ void setup() {
     
     // Network disabled for standalone operation
     Serial.println("WiFi/Weather/NTP: Disabled (standalone mode)");
+    lvgl_lock();
     ui_shell_update_wifi(false, 0);
     ui_shell_update_date("OFFLINE");
     ui_shell_update_time("--:--");
+    lvgl_unlock();
     
     // System stats monitoring task
     systemStats.startMonitorTask();
@@ -654,10 +686,23 @@ void setup() {
 void loop() {
     static unsigned long lastDebugTime = 0;
     static unsigned long loopCount = 0;
+    static unsigned long lastDisplayUpdate = 0;
     
-    // Update LVGL (core UI rendering)
+    // Keep display awake
+    unsigned long now = millis();
+    if (now - lastDisplayUpdate > 100) {
+        M5.Display.wakeup();
+        M5.Display.setBrightness(currentBrightness);
+        lastDisplayUpdate = now;
+    }
+    
+    // Update LVGL (core UI rendering) - NO MUTEX HERE, this must run freely
     lv_timer_handler();
+    lv_task_handler();
     loopCount++;
+    
+    // CRITICAL: Update M5 hardware state (buttons, sensors, etc)
+    M5.update();
     
     // Debug: Print LVGL tick every second to confirm loop is running
     if (millis() - lastDebugTime >= 1000) {

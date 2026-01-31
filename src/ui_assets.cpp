@@ -1,4 +1,5 @@
 #include "ui_assets.h"
+#include "SDHelper.h"
 #include <Arduino.h>
 
 // Image descriptor caches
@@ -53,8 +54,8 @@ static lv_img_dsc_t* create_img_dsc_from_file(const char *path) {
 
 // Initialize asset loading system
 bool ui_assets_init() {
-    // Attempt SD card initialization, but don't fail if unavailable
-    if (!SD.begin()) {
+    // SD must already be initialized by the main boot sequence
+    if (!SDHelper::isReady()) {
         Serial.println("⚠ SD Card not available - assets will be unavailable");
         Serial.println("  UI will run without boot animation and custom images");
         return false;  // Return false but don't block boot
@@ -71,7 +72,7 @@ bool ui_assets_init() {
 // Load specific image from SD card
 lv_img_dsc_t* ui_assets_load_image(const char *path) {
     // Check if SD is available first
-    if (!SD.begin()) {
+    if (!SDHelper::isReady()) {
         Serial.println("⚠ Cannot load asset - SD not initialized");
         return NULL;
     }

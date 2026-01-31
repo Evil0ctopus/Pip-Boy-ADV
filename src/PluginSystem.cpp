@@ -1,11 +1,17 @@
 // PluginSystem.cpp - Plugin System Implementation
 #include "PluginSystem.h"
+#include "SDHelper.h"
 #include <SD.h>
 #include <ArduinoJson.h>
 
 PluginSystem::PluginSystem() : initialized(false) {}
 
 bool PluginSystem::begin() {
+    if (!SDHelper::isReady()) {
+        Serial.println("PluginSystem: SD card not initialized");
+        return false;
+    }
+
     // Create plugins directory if it doesn't exist
     if (!SD.exists(PLUGIN_DIR)) {
         SD.mkdir(PLUGIN_DIR);

@@ -1,6 +1,10 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#if defined(DISABLE_CONFIG)
+#include "ConfigDisabled.h"
+#else
+
 #include <Arduino.h>
 #include <SD.h>
 
@@ -69,5 +73,7 @@ extern String WIFI_PASSWORD;
 extern String TIME_ZONE;
 extern String API_KEY;
 extern String LOCATION;
+
+#endif // DISABLE_CONFIG
 
 #endif // CONFIG_H

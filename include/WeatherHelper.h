@@ -1,6 +1,10 @@
 #ifndef WEATHER_HELPER_H
 #define WEATHER_HELPER_H
 
+#if defined(DISABLE_WEATHER)
+#include "WeatherHelperDisabled.h"
+#else
+
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
@@ -60,5 +64,7 @@ private:
 void weatherTask(void *pvParameters);
 void fetchWeatherData();
 void updateWeatherUI(const String &jsonData);
+
+#endif // DISABLE_WEATHER
 
 #endif // WEATHER_HELPER_H

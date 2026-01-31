@@ -9,7 +9,7 @@
         "-ExecutionPolicy", "Bypass",
         "-NoProfile",
         "-Command",
-        "Write-Host 'Building firmware...' -ForegroundColor Cyan; pio run; if ($LASTEXITCODE -eq 0) { Write-Host 'Upload starting...' -ForegroundColor Green; pio run --target upload; if ($LASTEXITCODE -eq 0) { Write-Host 'Opening serial monitor...' -ForegroundColor Green; Start-Sleep -Seconds 2; pio device monitor } else { Write-Host 'Upload failed!' -ForegroundColor Red; exit 1 } } else { Write-Host 'Build failed!' -ForegroundColor Red; exit 1 }"
+        "Write-Host 'Detecting COM port...' -ForegroundColor Cyan; .\\detect_port.ps1; if ($LASTEXITCODE -eq 0) { Write-Host '\nBuilding firmware...' -ForegroundColor Cyan; pio run; if ($LASTEXITCODE -eq 0) { Write-Host '\nUploading firmware...' -ForegroundColor Green; pio run --target upload; if ($LASTEXITCODE -eq 0) { Write-Host '\nWaiting for device reset...' -ForegroundColor Yellow; Start-Sleep -Seconds 3; Write-Host 'Opening serial monitor...' -ForegroundColor Green; pio device monitor } else { Write-Host 'Upload failed!' -ForegroundColor Red; exit 1 } } else { Write-Host 'Build failed!' -ForegroundColor Red; exit 1 } } else { Write-Host 'Port detection failed!' -ForegroundColor Red; exit 1 }"
       ],
       "group": {
         "kind": "build",
@@ -19,7 +19,8 @@
         "reveal": "always",
         "panel": "dedicated",
         "clear": false,
-        "showReuseMessage": false
+        "showReuseMessage": false,
+        "focus": true
       },
       "problemMatcher": []
     },
@@ -55,13 +56,34 @@
     {
       "label": "Monitor Only",
       "type": "shell",
-      "command": "pio",
-      "args": ["device", "monitor", "--baud", "115200"],
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy", "Bypass",
+        "-NoProfile",
+        "-Command",
+        "Write-Host 'Detecting COM port...' -ForegroundColor Cyan; .\\detect_port.ps1; if ($LASTEXITCODE -eq 0) { Write-Host 'Opening serial monitor...' -ForegroundColor Green; pio device monitor } else { Write-Host 'Port detection failed!' -ForegroundColor Red; exit 1 }"
+      ],
       "group": "none",
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
-        "clear": false
+        "clear": false,
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "Detect COM Port",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", ".\\detect_port.ps1"],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "focus": true
       },
       "problemMatcher": []
     },

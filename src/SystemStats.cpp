@@ -1,5 +1,6 @@
 #include "SystemStats.h"
 #include "ui_shell.h"
+#include "LvglLock.h"
 
 void SystemStats::begin() {
     _lastUpdate = 0;
@@ -125,11 +126,13 @@ void SystemStats::monitorTask(void *pvParameters) {
         systemStats.update();
         
         // Update UI
+        lvgl_lock();
         ui_shell_update_cpu(systemStats.getCPUFreqMHz());
         ui_shell_update_memory(systemStats.getFreeHeap(), systemStats.getTotalHeap());
         ui_shell_update_psram(systemStats.getPSRAMFree(), systemStats.getPSRAMSize());
         ui_shell_update_uptime(systemStats.getUptime());
         ui_shell_update_battery(systemStats.getBatteryLevel(), systemStats.isCharging());
+        lvgl_unlock();
         
         // Update every 2 seconds
         vTaskDelay(pdMS_TO_TICKS(2000));
