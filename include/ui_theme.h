@@ -7,15 +7,26 @@
 // Device Information
 #define DEVICE_MODEL "M5Stack Cardputer ADV"
 
-// Pip-Boy Green Color Palette
-#define PIPBOY_GREEN_BRIGHT    lv_color_make(0x33, 0xFF, 0x33)
-#define PIPBOY_GREEN           lv_color_make(0x00, 0xFF, 0x00)
-#define PIPBOY_GREEN_MED       lv_color_make(0x00, 0xCC, 0x00)
-#define PIPBOY_GREEN_DARK      lv_color_make(0x00, 0x66, 0x00)
-#define PIPBOY_GREEN_DARKER    lv_color_make(0x00, 0x33, 0x00)
-#define PIPBOY_BG_DARK         lv_color_make(0x00, 0x22, 0x00)
-#define PIPBOY_BG_DARKER       lv_color_make(0x00, 0x11, 0x00)
-#define PIPBOY_BLACK           lv_color_make(0x00, 0x00, 0x00)
+// Fallout 4 Pip-Boy 3000 Mark IV Bright Green Phosphor CRT Colors
+// From: https://github.com/nishad2m8/Pip-Boy-Weather-Clock
+// Authentic bright lime green terminal display with CRT styling
+#define PIPBOY_PHOSPHOR_BRIGHT lv_color_make(0x33, 0xFF, 0x66)  // Bright lime green glow #33FF66
+#define PIPBOY_PHOSPHOR        lv_color_make(0x00, 0xFF, 0x33)  // Main phosphor green #00FF33
+#define PIPBOY_PHOSPHOR_MED    lv_color_make(0x00, 0xCC, 0x22)  // Medium intensity #00CC22
+#define PIPBOY_PHOSPHOR_DARK   lv_color_make(0x00, 0x88, 0x11)  // Dark phosphor #008811
+#define PIPBOY_PHOSPHOR_SHADOW lv_color_make(0x00, 0x44, 0x00)  // Shadow/outline #004400
+#define PIPBOY_CRT_BG          lv_color_make(0x00, 0x22, 0x00)  // CRT background glow #002200
+#define PIPBOY_CRT_BLACK       lv_color_make(0x00, 0x11, 0x00)  // Near-black with green tint #001100
+#define PIPBOY_BLACK           lv_color_make(0x00, 0x00, 0x00)  // Pure black #000000
+
+// Legacy color aliases for compatibility
+#define PIPBOY_GREEN_BRIGHT    PIPBOY_PHOSPHOR_BRIGHT
+#define PIPBOY_GREEN           PIPBOY_PHOSPHOR
+#define PIPBOY_GREEN_MED       PIPBOY_PHOSPHOR_MED
+#define PIPBOY_GREEN_DARK      PIPBOY_PHOSPHOR_DARK
+#define PIPBOY_GREEN_DARKER    PIPBOY_PHOSPHOR_SHADOW
+#define PIPBOY_BG_DARK         PIPBOY_CRT_BG
+#define PIPBOY_BG_DARKER       PIPBOY_CRT_BLACK
 
 // Transparency levels
 #define PIPBOY_OPA_TRANSP      LV_OPA_TRANSP

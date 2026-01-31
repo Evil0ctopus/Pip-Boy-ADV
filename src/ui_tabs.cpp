@@ -2,7 +2,7 @@
 // Pip-Boy ADV Tab System - Complete Implementation
 // ============================================================================
 // Five-tab interface: STATUS | DATA | MAP | RADIO | SYSTEM
-// Uses LVGL tabview with custom Pip-Boy theme
+// Uses LVGL tabview with custom Pip-Boy theme and Vault Boy walking animation
 // ============================================================================
 
 #include "ui_tabs.h"
@@ -12,6 +12,7 @@
 #include "ui_settings.h"
 #include "ui_animations.h"
 #include "ui_statusbar.h"
+#include "VaultBoyAnimation.h"
 #include <Arduino.h>
 
 // ============================================================================
@@ -102,50 +103,121 @@ void ui_tabs_init(lv_obj_t *parent) {
         return;
     }
     
-    Serial.println("UI Tabs: Creating tabview...");
+    // Get dynamic screen dimensions
+    int32_t screen_width = 240;
+    int32_t screen_height = 135;
+    int32_t content_height = screen_height - STATUSBAR_HEIGHT;  // 117 px
     
-    // Create tabview (positioned below status bar)
-    ui_tabview_main = lv_tabview_create(parent, LV_DIR_TOP, 20);
-    lv_obj_set_size(ui_tabview_main, 240, 135 - STATUSBAR_HEIGHT);
+    Serial.printf("UI Tabs: Screen %dx%d, Content area: %dx%d\n", 
+                  screen_width, screen_height, screen_width, content_height);
+    
+    // Create main container - FULL SCREEN tabs with bottom button bar
+    ui_tabview_main = lv_obj_create(parent);
+    lv_obj_set_size(ui_tabview_main, screen_width, content_height);
     lv_obj_align(ui_tabview_main, LV_ALIGN_BOTTOM_MID, 0, 0);
+    lv_obj_set_style_bg_color(ui_tabview_main, PIPBOY_CRT_BLACK, 0);
+    lv_obj_set_style_pad_all(ui_tabview_main, 0, 0);
+    lv_obj_clear_flag(ui_tabview_main, LV_OBJ_FLAG_SCROLLABLE);
     
-    // Apply Pip-Boy theme to tabview
-    lv_obj_set_style_bg_color(ui_tabview_main, PIPBOY_BLACK, 0);
-    lv_obj_set_style_text_color(ui_tabview_main, PIPBOY_GREEN, 0);
+    // ========================================================================
+    // Create 5 full-screen tab containers (all same position, hidden by default)
+    // ========================================================================
     
-    // Style the tab buttons
-    lv_obj_t *tab_btns = lv_tabview_get_tab_btns(ui_tabview_main);
-    lv_obj_set_style_bg_color(tab_btns, PIPBOY_GREEN_DARK, 0);
-    lv_obj_set_style_bg_opa(tab_btns, PIPBOY_OPA_70, 0);
-    lv_obj_set_style_text_color(tab_btns, PIPBOY_GREEN_BRIGHT, 0);
-    lv_obj_set_style_text_font(tab_btns, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_pad_all(tab_btns, 2, 0);
+    ui_tab_status = lv_obj_create(ui_tabview_main);
+    ui_tab_data = lv_obj_create(ui_tabview_main);
+    ui_tab_map = lv_obj_create(ui_tabview_main);
+    ui_tab_radio = lv_obj_create(ui_tabview_main);
+    ui_tab_system = lv_obj_create(ui_tabview_main);
     
-    // Active tab style
-    lv_obj_set_style_bg_color(tab_btns, PIPBOY_GREEN, LV_PART_ITEMS | LV_STATE_CHECKED);
-    lv_obj_set_style_bg_opa(tab_btns, PIPBOY_OPA_COVER, LV_PART_ITEMS | LV_STATE_CHECKED);
-    lv_obj_set_style_text_color(tab_btns, PIPBOY_BLACK, LV_PART_ITEMS | LV_STATE_CHECKED);
+    // Configure all tab containers for full screen display
+    lv_obj_t *tabs[] = {ui_tab_status, ui_tab_data, ui_tab_map, ui_tab_radio, ui_tab_system};
+    for (int i = 0; i < 5; i++) {
+        lv_obj_set_size(tabs[i], screen_width, content_height - 18);
+        lv_obj_set_pos(tabs[i], 0, 0);
+        lv_obj_set_style_bg_color(tabs[i], PIPBOY_CRT_BLACK, 0);
+        lv_obj_set_style_border_width(tabs[i], 0, 0);
+        lv_obj_set_style_pad_all(tabs[i], 4, 0);
+        lv_obj_clear_flag(tabs[i], LV_OBJ_FLAG_SCROLLABLE);
+        if (i > 0) lv_obj_add_flag(tabs[i], LV_OBJ_FLAG_HIDDEN);  // Hide all except STATUS
+    }
     
-    // Create all five tabs
-    ui_tab_status = lv_tabview_add_tab(ui_tabview_main, "STAT");
-    ui_tab_data = lv_tabview_add_tab(ui_tabview_main, "DATA");
-    ui_tab_map = lv_tabview_add_tab(ui_tabview_main, "MAP");
-    ui_tab_radio = lv_tabview_add_tab(ui_tabview_main, "RADIO");
-    ui_tab_system = lv_tabview_add_tab(ui_tabview_main, "SYS");
+    // ========================================================================
+    // Bottom Tab Button Bar
+    // ========================================================================
+    
+    lv_obj_t *tab_bar = lv_obj_create(ui_tabview_main);
+    lv_obj_set_size(tab_bar, screen_width, 16);
+    lv_obj_set_pos(tab_bar, 0, content_height - 16);
+    lv_obj_set_style_bg_color(tab_bar, PIPBOY_CRT_BLACK, 0);
+    lv_obj_set_style_border_color(tab_bar, PIPBOY_PHOSPHOR, 0);
+    lv_obj_set_style_border_width(tab_bar, 1, 0);
+    lv_obj_set_style_border_side(tab_bar, LV_BORDER_SIDE_TOP, 0);
+    lv_obj_set_style_pad_all(tab_bar, 1, 0);
+    lv_obj_set_style_layout(tab_bar, LV_LAYOUT_FLEX, 0);
+    lv_obj_set_style_flex_flow(tab_bar, LV_FLEX_FLOW_ROW, 0);
+    lv_obj_set_style_flex_main_place(tab_bar, LV_FLEX_ALIGN_SPACE_AROUND, 0);
+    lv_obj_clear_flag(tab_bar, LV_OBJ_FLAG_SCROLLABLE);
+    
+    // ========================================================================
+    // Create Tab Buttons with Click Handlers
+    // ========================================================================
+    
+    // Lambda function to switch tabs
+    auto switch_tab = [](lv_obj_t *new_tab) {
+        lv_obj_add_flag(ui_tab_status, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_tab_data, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_tab_map, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_tab_radio, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui_tab_system, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(new_tab, LV_OBJ_FLAG_HIDDEN);
+    };
+    
+    // Helper to create tab button with click handler
+    auto create_tab_btn = [&](const char *label, lv_obj_t *target_tab) {
+        lv_obj_t *btn = lv_btn_create(tab_bar);
+        lv_obj_set_size(btn, 45, 14);
+        lv_obj_set_style_bg_color(btn, PIPBOY_PHOSPHOR_DARK, 0);
+        lv_obj_set_style_border_width(btn, 1, 0);
+        lv_obj_set_style_border_color(btn, PIPBOY_PHOSPHOR, 0);
+        lv_obj_set_style_radius(btn, 0, 0);
+        
+        lv_obj_t *lbl = lv_label_create(btn);
+        lv_label_set_text(lbl, label);
+        lv_obj_set_style_text_font(lbl, &lv_font_unscii_8, 0);
+        lv_obj_set_style_text_color(lbl, PIPBOY_PHOSPHOR, 0);
+        lv_obj_center(lbl);
+        
+        // Add click event handler
+        lv_obj_add_event_cb(btn, [](lv_event_t *e) {
+            if (lv_event_get_code(e) == LV_EVENT_CLICKED) {
+                lv_obj_t *target = (lv_obj_t *)lv_event_get_user_data(e);
+                
+                // Hide all tabs
+                lv_obj_add_flag(ui_tab_status, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(ui_tab_data, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(ui_tab_map, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(ui_tab_radio, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(ui_tab_system, LV_OBJ_FLAG_HIDDEN);
+                
+                // Show clicked tab
+                lv_obj_clear_flag(target, LV_OBJ_FLAG_HIDDEN);
+            }
+        }, LV_EVENT_CLICKED, target_tab);
+    };
+    
+    // Create all tab buttons
+    create_tab_btn("STAT", ui_tab_status);
+    create_tab_btn("DATA", ui_tab_data);
+    create_tab_btn("MAP", ui_tab_map);
+    create_tab_btn("RADIO", ui_tab_radio);
+    create_tab_btn("SYS", ui_tab_system);
     
     // Set legacy aliases
     ui_tab_stats = ui_tab_status;
     ui_tab_inventory = ui_tab_map;
     ui_tab_settings = ui_tab_system;
     
-    Serial.println("  ✓ Tabs created");
-    
-    // Set tab backgrounds
-    lv_obj_set_style_bg_color(ui_tab_status, PIPBOY_BG_DARK, 0);
-    lv_obj_set_style_bg_color(ui_tab_data, PIPBOY_BG_DARK, 0);
-    lv_obj_set_style_bg_color(ui_tab_map, PIPBOY_BG_DARK, 0);
-    lv_obj_set_style_bg_color(ui_tab_radio, PIPBOY_BG_DARK, 0);
-    lv_obj_set_style_bg_color(ui_tab_system, PIPBOY_BG_DARK, 0);
+    Serial.println("  ✓ Full-screen tab system with button bar created");
     
     // Create tab contents
     ui_tabs_create_status(ui_tab_status);
@@ -155,13 +227,6 @@ void ui_tabs_init(lv_obj_t *parent) {
     ui_tabs_create_system(ui_tab_system);
     
     Serial.println("  ✓ Tab contents populated");
-    
-    // Add tab change event
-    lv_obj_add_event_cb(ui_tabview_main, tab_changed_event, LV_EVENT_VALUE_CHANGED, NULL);
-    
-    // Start with STATUS tab
-    lv_tabview_set_act(ui_tabview_main, TAB_STATUS, LV_ANIM_OFF);
-    
     Serial.println("UI Tabs: Initialization complete");
 }
 
@@ -185,11 +250,12 @@ void ui_tabs_create_settings(lv_obj_t *parent) {
 void ui_tabs_create_status(lv_obj_t *parent) {
     if (!parent) return;
     
-    // Title
+    // Title with authentic monospace terminal font
     lv_obj_t *title = lv_label_create(parent);
-    lv_label_set_text(title, "STATUS");
+    lv_label_set_text(title, "- STATUS -");
     ui_theme_apply_label_title(title);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(title, &lv_font_unscii_8, 0);
+    lv_obj_set_style_text_color(title, PIPBOY_PHOSPHOR_BRIGHT, 0);
     lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 1);
     
     // ========================================================================
@@ -228,40 +294,48 @@ void ui_tabs_create_status(lv_obj_t *parent) {
     lv_obj_align(ui_label_status_temp, LV_ALIGN_TOP_LEFT, 3, 62);
     
     // ========================================================================
-    // Right Column: Animation Container
+    // Right Column: Vault Boy Walking Animation (from Pip-Boy Weather Clock)
     // ========================================================================
     
-    ui_animation_container = lv_obj_create(parent);
-    lv_obj_set_size(ui_animation_container, 85, 85);
-    lv_obj_align(ui_animation_container, LV_ALIGN_TOP_RIGHT, -2, 18);
-    ui_theme_apply_container(ui_animation_container);
-    lv_obj_clear_flag(ui_animation_container, LV_OBJ_FLAG_SCROLLABLE);
-    
-    // Initialize animation system
-    ui_animations_init(ui_animation_container);
+    // Initialize the Vault Boy animation with PNG frames from SD card
+    lv_obj_t *vault_boy_container = vault_boy_animation_init(parent);
+    lv_obj_align(vault_boy_container, LV_ALIGN_TOP_RIGHT, -4, 20);
     
     // ========================================================================
-    // Bottom: Battery Status
+    // Bottom: Battery Status with Flex Layout (prevents overlap)
     // ========================================================================
     
-    ui_label_status_battery = lv_label_create(parent);
-    lv_label_set_text(ui_label_status_battery, "POWER:");
+    // Bottom status container (full width at bottom)
+    lv_obj_t *bottom_container = lv_obj_create(parent);
+    lv_obj_set_size(bottom_container, lv_obj_get_width(parent) - 4, 14);
+    lv_obj_align(bottom_container, LV_ALIGN_BOTTOM_MID, 0, -2);
+    ui_theme_apply_container(bottom_container);
+    lv_obj_clear_flag(bottom_container, LV_OBJ_FLAG_SCROLLABLE);
+    
+    // Enable flex layout (horizontal row)
+    lv_obj_set_style_layout(bottom_container, LV_LAYOUT_FLEX, 0);
+    lv_obj_set_style_flex_flow(bottom_container, LV_FLEX_FLOW_ROW, 0);
+    lv_obj_set_style_flex_main_place(bottom_container, LV_FLEX_ALIGN_SPACE_BETWEEN, 0);
+    lv_obj_set_style_flex_cross_place(bottom_container, LV_FLEX_ALIGN_CENTER, 0);
+    lv_obj_set_style_pad_all(bottom_container, 2, 0);
+    
+    // POWER label
+    ui_label_status_battery = lv_label_create(bottom_container);
+    lv_label_set_text(ui_label_status_battery, "PWR:");
     ui_theme_apply_label_small(ui_label_status_battery);
-    lv_obj_align(ui_label_status_battery, LV_ALIGN_BOTTOM_LEFT, 3, -2);
     
-    ui_bar_battery = lv_bar_create(parent);
-    lv_obj_set_size(ui_bar_battery, 140, 10);
-    lv_obj_align(ui_bar_battery, LV_ALIGN_BOTTOM_LEFT, 45, -2);
+    // Battery bar (wider to fill space)
+    ui_bar_battery = lv_bar_create(bottom_container);
+    lv_obj_set_size(ui_bar_battery, 130, 10);
     lv_bar_set_range(ui_bar_battery, 0, 100);
     lv_bar_set_value(ui_bar_battery, 75, LV_ANIM_OFF);
     ui_theme_apply_bar(ui_bar_battery);
     lv_obj_set_style_bg_color(ui_bar_battery, PIPBOY_GREEN, LV_PART_INDICATOR);
     
     // Battery percentage label
-    lv_obj_t *bat_pct = lv_label_create(parent);
+    lv_obj_t *bat_pct = lv_label_create(bottom_container);
     lv_label_set_text(bat_pct, "75%");
     ui_theme_apply_label_small(bat_pct);
-    lv_obj_align(bat_pct, LV_ALIGN_BOTTOM_RIGHT, -3, -2);
 }
 
 // ============================================================================

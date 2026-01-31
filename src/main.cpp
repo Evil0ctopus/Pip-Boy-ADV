@@ -57,7 +57,7 @@
 
 // LVGL Display Buffers (double buffering for smooth rendering)
 static lv_disp_draw_buf_t draw_buf;
-static lv_color_t buf1[DISPLAY_WIDTH * 10];  // Buffer 1: 1/10th of screen
+static lv_color_t buf1[DISPLAY_WIDTH * 10];  // Buffer 1: 10 lines of screen
 static lv_color_t buf2[DISPLAY_WIDTH * 10];  // Buffer 2: for double buffering
 
 // SPI instance for SD card (HSPI)
@@ -110,11 +110,8 @@ void lvgl_display_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color
     M5.Display.startWrite();
     M5.Display.setAddrWindow(area->x1, area->y1, w, h);
     
-    // Write pixels with proper color format handling
-    uint16_t *pixels = (uint16_t *)color_p;
-    for (uint32_t i = 0; i < w * h; i++) {
-        M5.Display.writeData(pixels[i]);
-    }
+    // Use fast bulk pixel transfer - pushPixels handles the pixel format correctly
+    M5.Display.pushPixels((uint16_t *)color_p, w * h);
     
     M5.Display.endWrite();
 
@@ -132,7 +129,7 @@ void lvgl_setup() {
     lvgl_lock_init();
     Serial.println("  ✓ LVGL core initialized (v8.4.0)");
 
-    // Initialize display buffer with double buffering
+    // Initialize display buffer with smaller buffers for proper partial updates
     lv_disp_draw_buf_init(&draw_buf, buf1, buf2, DISPLAY_WIDTH * 10);
     Serial.printf("  ✓ Display buffers allocated (2x %d bytes)\n", DISPLAY_WIDTH * 10 * sizeof(lv_color_t));
 
